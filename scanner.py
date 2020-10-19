@@ -11,29 +11,65 @@ reserved = {
 
 tokens = \
     ['ID',
+     'Number',
+     # binary operators
      'Plus',
      'Minus',
      'Multiply',
      'Divide',
-     'LeftParen',
-     'RightParen',
-     'NUMBER',
+     # matrix binary operators
      'MatBinaryPlus',
      'MatrixBinaryMinus',
      'MatrixBinaryMultiply',
      'MatrixBinaryDivide',
+     # todo implement following lexems
+     # assign operators
+     'Assign',
+     'AddAndAssign',
+     'SubtractAndAssign',
+     'MultiplyAndAssign',
+     'DivideAndAssign',
+     # relational operators
+     'LesserThan'
+     'GreaterThan',
+     'LesserOrEqualThan',
+     'GreaterOrEqualThan',
+     'NotEqual',
+     'Equal',
+     # brackets
+     'RoundBracketLeft',
+     'RoundBracketRight',
+     'CurlyBracketLeft',
+     'CurlyBracketRight',
+     'SquareBracketLeft',
+     'SquareBracketRight',
+     # various elxems
+     'RangeOperator',
+     'MatrixTransposition',
+     'Comma',
+     'Semicolon'
      ] + list(reserved.values())
 
 t_Plus = r'\+'
 t_Minus = r'-'
 t_Multiply = r'\*'
 t_Divide = r'/'
-t_LeftParen = r'\('
-t_RightParen = r'\)'
+
 t_MatBinaryPlus = r'\.\+'
 t_MatrixBinaryMinus = r'\.-'
 t_MatrixBinaryMultiply = r'\.\*'
 t_MatrixBinaryDivide = r'\./'
+
+# todo implement
+t_LesserThan = r''
+t_GreaterThan = r''
+t_LesserOrEqualThan = r''
+t_GreaterOrEqualThan = r''
+t_NotEqual = r''
+t_Equal = r''
+
+t_RoundBracketLeft = r'\('
+t_RoundBracketRight = r'\)'
 
 t_ignore = ' \t'
 
@@ -44,7 +80,7 @@ def t_ID(t):
     return t
 
 
-def t_NUMBER(t):
+def t_Number(t):
     r'\d+'
     t.value = int(t.value)
     return t

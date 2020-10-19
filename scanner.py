@@ -1,6 +1,5 @@
 #!/usr/bin/env python
 
-import sys
 import ply.lex as lex
 
 reserved = {
@@ -61,12 +60,24 @@ def t_error(t):
     t.lexer.skip(1)
 
 
+# Compute column.
+# input is the input text string
+# token is a token instance
+def find_column(source: str, token_to_find):
+    last_cr = source.rfind('\n', 0, token_to_find.lexpos)
+    if last_cr < 0:
+        last_cr = 0
+    column = (token_to_find.lexpos - last_cr) + 1
+    return column
+
+
 lexer = lex.lex()
-fh = None
-try:
-    fh = open(sys.argv[1] if len(sys.argv) > 1 else "example.txt", "r")
-    lexer.input(fh.read())
-    for token in lexer:
-        print("line %d: %s(%s)" % (token.lineno, token.type, token.value))
-except:
-    print("open error\n")
+
+# fh = None
+# try:
+#     fh = open(sys.argv[1] if len(sys.argv) > 1 else "example.txt", "r")
+#     lexer.input(fh.read())
+#     for token in lexer:
+#         print("line %d: %s(%s)" % (token.lineno, token.type, token.value))
+# except:
+#     print("open error\n")

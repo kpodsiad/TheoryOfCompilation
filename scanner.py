@@ -11,7 +11,9 @@ reserved = {
 
 tokens = \
     ['ID',
-     'Number',
+     'FloatingPointNumber',
+     'IntegerNumber',
+     'String',
      # binary operators
      'Plus',
      'Minus',
@@ -22,7 +24,6 @@ tokens = \
      'MatrixBinaryMinus',
      'MatrixBinaryMultiply',
      'MatrixBinaryDivide',
-     # todo implement following lexems
      # assign operators
      'Assign',
      'AddAndAssign',
@@ -30,7 +31,7 @@ tokens = \
      'MultiplyAndAssign',
      'DivideAndAssign',
      # relational operators
-     'LesserThan'
+     'LesserThan',
      'GreaterThan',
      'LesserOrEqualThan',
      'GreaterOrEqualThan',
@@ -43,33 +44,52 @@ tokens = \
      'CurlyBracketRight',
      'SquareBracketLeft',
      'SquareBracketRight',
-     # various elxems
+     # various lexems
      'RangeOperator',
      'MatrixTransposition',
      'Comma',
-     'Semicolon'
+     'Semicolon',
+     'Comment'
      ] + list(reserved.values())
 
+
+t_String = r'".*"'
+# binary operators
 t_Plus = r'\+'
 t_Minus = r'-'
 t_Multiply = r'\*'
 t_Divide = r'/'
-
+# matrix binary operators
 t_MatBinaryPlus = r'\.\+'
 t_MatrixBinaryMinus = r'\.-'
 t_MatrixBinaryMultiply = r'\.\*'
 t_MatrixBinaryDivide = r'\./'
-
-# todo implement
-t_LesserThan = r''
-t_GreaterThan = r''
-t_LesserOrEqualThan = r''
-t_GreaterOrEqualThan = r''
-t_NotEqual = r''
-t_Equal = r''
-
+# assign operators
+t_Assign = r'='
+t_AddAndAssign = r'\+='
+t_SubtractAndAssign = r'-='
+t_MultiplyAndAssign = r'\*='
+t_DivideAndAssign = r'/='
+# relational operators
+t_LesserThan = r'<'
+t_GreaterThan = r'>'
+t_LesserOrEqualThan = r'<='
+t_GreaterOrEqualThan = r'>='
+t_NotEqual = r'!='
+t_Equal = r'=='
+# brackets
 t_RoundBracketLeft = r'\('
 t_RoundBracketRight = r'\)'
+t_CurlyBracketLeft = r'\{'
+t_CurlyBracketRight = r'\}'
+t_SquareBracketLeft = r'\['
+t_SquareBracketRight = r'\]'
+# various lexems
+t_RangeOperator = r':'
+t_MatrixTransposition = r"'"
+t_Comma = r','
+t_Semicolon = r';'
+t_ignore_Comment = r'\#.*'
 
 t_ignore = ' \t'
 
@@ -80,7 +100,14 @@ def t_ID(t):
     return t
 
 
-def t_Number(t):
+# it's must be before t_IntegerNumber, otherwise lexer would interpret e.g. 60. like integer(60) and invalid symbol (.)
+def t_FloatingPointNumber(t):
+    r'(\d*\.\d+)|(\d+\.\d*)' # a.x or x.a where a could be empty
+    t.value = float(t.value)
+    return t
+
+
+def t_IntegerNumber(t):
     r'\d+'
     t.value = int(t.value)
     return t
@@ -92,28 +119,20 @@ def t_newline(t):
 
 
 def t_error(t):
-    print("line %d: illegal character '%s'" % (t.lineno, t.value[0]))
+    print("(%d, %d): illegal character '%s'" % (t.lineno, find_column(t), t.value[0]))
     t.lexer.skip(1)
+
+
+lexer = lex.lex()
+source = ""
 
 
 # Compute column.
 # input is the input text string
 # token is a token instance
-def find_column(source: str, token_to_find):
+def find_column(token_to_find):
     last_cr = source.rfind('\n', 0, token_to_find.lexpos)
     if last_cr < 0:
         last_cr = 0
-    column = (token_to_find.lexpos - last_cr) + 1
+    column = (token_to_find.lexpos - last_cr)
     return column
-
-
-lexer = lex.lex()
-
-# fh = None
-# try:
-#     fh = open(sys.argv[1] if len(sys.argv) > 1 else "example.txt", "r")
-#     lexer.input(fh.read())
-#     for token in lexer:
-#         print("line %d: %s(%s)" % (token.lineno, token.type, token.value))
-# except:
-#     print("open error\n")

@@ -11,6 +11,7 @@ if __name__ == '__main__':
         sys.exit(0)
 
     text = file.read()
+    scanner.source = text
     lexer = scanner.lexer
     lexer.input(text)  # Give the lexer some input
 
@@ -19,5 +20,5 @@ if __name__ == '__main__':
         tok = lexer.token()
         if not tok:
             break  # No more input
-        column = scanner.find_column(text, tok)
+        column = scanner.find_column(tok)
         print("(%d,%d): %s(%s)" % (tok.lineno, column, tok.type, tok.value))

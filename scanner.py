@@ -60,12 +60,14 @@ def t_STR(t):
 def t_newline(t):
     r'\n+'
     t.lexer.lineno += len(t.value)
-    t.lexer.last_newline = t.lexpos
+    t.lexer.last_newline = t.lexpos + len(t.value) - 1
 
 
 def t_error(t):
-    print("Illegal character '{}'".format(t.value[0]))
+    column = t.lexpos - t.lexer.last_newline
+    print("Illegal character at line {} column {}: '{}'".format(t.lineno, column,  t.value[0]))
     t.lexer.skip(1)
 
 
 lexer = lex()
+lexer.last_newline = -1

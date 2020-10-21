@@ -5,10 +5,10 @@ import scanner
 
 if __name__ == '__main__':
     try:
-        filename = sys.argv[1] if len(sys.argv) > 1 else "example.txt"
-        file = open(filename, "r")
+        filename = sys.argv[1] if len(sys.argv) > 1 else 'example.txt'
+        file = open(filename, 'r')
     except IOError:
-        print("Cannot open file: {0}".format(filename))
+        print(f'Cannot open file: {filename}')
         sys.exit(0)
 
     text = file.read()
@@ -21,4 +21,4 @@ if __name__ == '__main__':
         if tok is None:
             break    # No more input
         column = tok.lexpos - lexer.last_newline
-        print("({}, {}): {}({})".format(tok.lineno, column, tok.type, tok.value))
+        print(f'({tok.lineno}, {column}): {tok.type}({tok.value})')

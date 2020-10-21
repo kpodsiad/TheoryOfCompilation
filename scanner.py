@@ -28,7 +28,7 @@ t_GE = r'>='
 t_EQ = r'=='
 t_NE = r'\!='
 
-literals = '+-*/=()[]{}<>:\',;'
+literals = "+-*/=()[]{}<>:',;"
 t_ignore = ' \t'
 t_ignore_COMMENT = r'\#.*'
 
@@ -65,7 +65,7 @@ def t_newline(t):
 
 def t_error(t):
     column = t.lexpos - t.lexer.last_newline
-    print("Illegal character at line {} column {}: '{}'".format(t.lineno, column,  t.value[0]))
+    print(f"Illegal character at line {t.lineno} column {column}: '{t.value[0]}'")
     t.lexer.skip(1)
 
 

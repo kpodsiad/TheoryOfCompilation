@@ -1,3 +1,4 @@
+#!/usr/bin/python3
 import sys
 # scanner.py is a file you create, (it is not an external library)
 import scanner

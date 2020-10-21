@@ -3,3 +3,6 @@ __pycache__/
 .vscode/
 */.*
 */__pycache__/
+notes.md
+*.txt
+*.m

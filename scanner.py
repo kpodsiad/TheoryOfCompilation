@@ -33,14 +33,8 @@ t_ignore = ' \t'
 t_ignore_COMMENT = r'\#.*'
 
 
-def t_ID(t):
-    r'[a-zA-Z_][a-zA-Z_0-9]*'
-    t.type = reserved.get(t.value, 'ID')    # Check for reserved words
-    return t
-
-
 def t_FLOAT(t):
-    r'(\d+\.\d*)|(\d*\.\d+)'
+    r'(((\d+\.\d*)|(\.\d+))(([eE]\d+)?)|(\d+(.\d*)?[eE]\d+))'
     t.value = float(t.value)
     return t
 
@@ -57,6 +51,12 @@ def t_STR(t):
     return t
 
 
+def t_ID(t):
+    r'[a-zA-Z_][a-zA-Z_0-9]*'
+    t.type = reserved.get(t.value, 'ID')    # Check for reserved words
+    return t
+
+
 def t_newline(t):
     r'\n+'
     t.lexer.lineno += len(t.value)
@@ -65,7 +65,8 @@ def t_newline(t):
 
 def t_error(t):
     column = t.lexpos - t.lexer.last_newline
-    print(f"Illegal character at line {t.lineno} column {column}: '{t.value[0]}'")
+    print(
+        f"Illegal character at line {t.lineno} column {column}: '{t.value[0]}'")
     t.lexer.skip(1)
 
 

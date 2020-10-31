@@ -9,7 +9,10 @@ tokens = scanner.tokens
 precedence = (
     # to fill ...
     ('left', '+', '-', 'DOTADD', 'DOTSUB'),
-    ('left', '*', '/')
+    ('left', '*', '/', 'DOTMUL', 'DOTDIV'),
+    ('left', "'")
+    ('right', 'UMINUS')
+    ('left', 'GE', 'LE', '<', '>', 'EQ', 'NE'),
     # to fill ...
 )
 
@@ -68,6 +71,8 @@ def p_assignment(p):
                   | ID MULASSIGN generic_expression
                   | ID DIVASSIGN generic_expression"""
 
-
+def p_expression_uminus(p):
+     'expression : - expression %prec UMINUS'
+     p[0] = -p[2]
 
 parser = yacc.yacc()

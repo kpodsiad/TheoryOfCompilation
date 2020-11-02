@@ -2,7 +2,7 @@ from ply.lex import lex, Lexer
 
 
 reserved = {
-    'if': 'IF', 'else': 'ELSE', 'while': 'WHILE', 'if': 'IF',
+    'if': 'IF', 'else': 'ELSE', 'while': 'WHILE',
     'break': 'BREAK', 'continue': 'CONTINUE', 'return': 'RETURN',
     'eye': 'EYE', 'zeros': 'ZEROS', 'ones': 'ONES', 'print': 'PRINT'
 }

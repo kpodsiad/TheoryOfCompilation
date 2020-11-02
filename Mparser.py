@@ -44,6 +44,7 @@ def p_instructions_1(p):
 def p_instructions_2(p):
     """instructions : instruction """
 
+
 # to finish the grammar
 # ....
 
@@ -71,6 +72,7 @@ def p_assignment(p):
                   | ID MULASSIGN generic_expression
                   | ID DIVASSIGN generic_expression"""
 
+
 def p_expression_uminus(p):
     """expression : - expression %prec UMINUS"""
     p[0] = -p[2]
@@ -86,7 +88,7 @@ def p_primitive(p):
 def p_matrix(p):
     """matrix      : '[' matrix_rows ']'
        matrix_rows : matrix_row ',' matrix_rows
-                   | 
+                   |
        matrix_row  : '[' primitives ']'
        primitives  : primitive ',' primitives
                    | """

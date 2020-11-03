@@ -58,8 +58,8 @@ def p_code_block(p):
 
 def p_generic_expression(p):
     """generic_expression : assignment ';'
-                          : PRINT STR ';'
-                          : RETURN expression ';'
+                          | PRINT STR ';'
+                          | RETURN expression ';'
     """
 
 

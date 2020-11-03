@@ -7,14 +7,14 @@ import ply.yacc as yacc
 tokens = scanner.tokens
 
 precedence = (
-    # to fill ...
+    ('nonassoc', 'IFX'),
+    ('nonassoc', 'ELSE'),
     ('right', '=', 'ADDASSIGN', 'SUBASSIGN', 'MULASSIGN', 'DIVASSIGN'),
     ('left', 'EQ', 'NE'),
     ('left', 'GE', 'LE', 'LT', 'GT'),
     ('left', '+', '-', 'DOTADD', 'DOTSUB'),
     ('left', '*', '/', 'DOTMUL', 'DOTDIV'),
     ('right', 'UMINUS'),
-    # to fill ...
 )
 
 
@@ -48,8 +48,10 @@ def p_instructions_2(p):
 
 def p_instruction(p):
     """instruction : code_block
-                   | generic_expression
-                   | flow_control"""
+                   | generic_expression ';'
+                   | flow_control
+                   | BREAK ';'
+                   | CONTINUE ';' """
 
 
 def p_code_block(p):
@@ -57,18 +59,33 @@ def p_code_block(p):
 
 
 def p_generic_expression(p):
-    """generic_expression : assignment ';'
-                          | PRINT STR ';'
-                          | RETURN expression ';'
+    """generic_expression : assignment
+                          | print_expr
+                          | RETURN expression
+    """
+
+
+def p_print_expr(p):
+    """print_expr : PRINT values
+       values : value ',' values
+              | value
+    """
+
+
+def p_lvalue(p):
+    """lvalue : ID
+              | ID '[' INT ']' 
+              | ID '[' INT ',' INT ']'
     """
 
 
 def p_assignment(p):
-    """assignment : ID '=' assignment
-                  | ID ADDASSIGN assignment
-                  | ID SUBASSIGN assignment
-                  | ID MULASSIGN assignment
-                  | ID DIVASSIGN assignment
+    """assignment : lvalue '=' assignment
+                  | lvalue ADDASSIGN assignment
+                  | lvalue SUBASSIGN assignment
+                  | lvalue MULASSIGN assignment
+                  | lvalue DIVASSIGN assignment
+                  | expression
     """
 
 
@@ -92,24 +109,10 @@ def p_expression_relop(p):
                   | expression NE expression"""
 
 
-def p_expression_group(p):
-    """expression : '(' expression ')'"""
-    p[0] = p[2]
-
-
 def p_expression_uminus(p):
     """expression : - expression %prec UMINUS"""
-    p[0] = '-' + p[2]  # inaczej python pluł się, że operator - jest używany ze złym typem
-    
-    
-def p_expression_comp(p):
-    """expression : expression LT expression
-                  | expression GT expression
-                  | expression EQ expression
-                  | expression NE expression
-                  | expression LE expression
-                  | expression GE expression"""
-       
+    p[0] = '-' + p[1]
+      
                   
 def p_expression_transposition(p):
     """expression : expression TRANSPOSITION"""
@@ -117,7 +120,7 @@ def p_expression_transposition(p):
        
                   
 def p_expression_downgrade(p):
-    """expression : primitive
+    """expression : value
                   | func_call
                   | '(' assignment ')'"""
 
@@ -132,17 +135,19 @@ def p_primitive(p):
 
 def p_matrix(p):
     """matrix      : '[' matrix_rows ']'
-       matrix_rows : matrix_row ',' matrix_rows
-                   |
-       matrix_row  : '[' primitives ']'
+       matrix_rows : row ',' matrix_rows
+                   | row
+       row  : '[' primitives ']'
        primitives  : primitive ',' primitives
-                   | """
-    # nie jestem 100% pewien pod kątem tej definicji
-
+                   | primitive"""
+                   
 
 def p_value(p):
     """value : matrix
-             | primitive"""
+             | primitive
+             | lvalue
+             | row"""
+
              
 def p_func_call(p):
     """func_call : EYE '(' INT ')'
@@ -153,4 +158,18 @@ def p_func_call(p):
     """
 
 
+def p_flow_control(p):
+    """flow_control : IF '(' assignment ')' instruction %prec IFX
+                    | IF '(' assignment ')' instruction ELSE instruction
+                    | WHILE '(' assignment ')' instruction
+                    | FOR ID '=' range instruction
+       range        : id_or_int ':' id_or_int
+       id_or_int    : ID
+                    | INT
+    """
+    
+
+
 parser = yacc.yacc()
+# https://stackoverflow.com/questions/51575487/python-lex-yacc-reports-infinite-recursion-detected-for-symbol
+# https://stackoverflow.com/questions/61751397/resolving-shift-reduce-conflicts-in-ply-yacc

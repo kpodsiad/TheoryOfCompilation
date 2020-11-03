@@ -13,7 +13,6 @@ precedence = (
     ('left', 'GE', 'LE', 'LT', 'GT'),
     ('left', '+', '-', 'DOTADD', 'DOTSUB'),
     ('left', '*', '/', 'DOTMUL', 'DOTDIV'),
-    ('left', 'TRANSPOSITION'),
     ('right', 'UMINUS'),
     # to fill ...
 )
@@ -47,10 +46,6 @@ def p_instructions_2(p):
     """instructions : instruction """
 
 
-# to finish the grammar
-# ....
-
-
 def p_instruction(p):
     """instruction : code_block
                    | generic_expression
@@ -77,45 +72,35 @@ def p_assignment(p):
     """
 
 
+def p_expression_binop(p):
+    """expression : expression '+' expression
+                  | expression '-' expression
+                  | expression '*' expression
+                  | expression '/' expression
+                  | expression DOTADD expression
+                  | expression DOTSUB expression
+                  | expression DOTMUL expression
+                  | expression DOTDIV expression"""
+
+
+def p_expression_relop(p):
+    """expression : expression GE expression
+                  | expression GT expression
+                  | expression LE expression
+                  | expression LT expression
+                  | expression EQ expression
+                  | expression NE expression"""
+
+
 def p_expression_group(p):
     """expression : '(' expression ')'"""
     p[0] = p[2]
 
 
-def p_expression_binop(p):
-    """expression : expression '+' expression
-                  | expression '-' expression
-                  | expression '*' expression
-                  | expression '/' expression"""
-    if p[2] == '+':
-        p[0] = p[1] + p[3]
-    elif p[2] == '-':
-        p[0] = p[1] - p[3]
-    elif p[2] == '*':
-        p[0] = p[1] * p[3]
-    elif p[2] == '/':
-        p[0] = p[1] / p[3]
-
-
-def p_expression_dotbinop(p):
-    """expression : expression DOTADD expression
-                  | expression DOTSUB expression
-                  | expression DOTMUL expression
-                  | expression DOTDIV expression"""
-    # todo: what to do below?
-    if p[2] == '.+':
-        p[0] = p[1] + p[3]
-    elif p[2] == '.-':
-        p[0] = p[1] - p[3]
-    elif p[2] == '.*':
-        p[0] = p[1] * p[3]
-    elif p[2] == './':
-        p[0] = p[1] / p[3]
-
-
 def p_expression_uminus(p):
     """expression : - expression %prec UMINUS"""
-    p[0] = -p[2]
+    p[0] = '-' + p[2]  # inaczej python pluł się, że operator - jest używany ze złym typem
+    
     
 def p_expression_comp(p):
     """expression : expression LT expression
@@ -124,12 +109,17 @@ def p_expression_comp(p):
                   | expression NE expression
                   | expression LE expression
                   | expression GE expression"""
+       
+                  
+def p_expression_transposition(p):
+    """expression : expression TRANSPOSITION"""
+    p[0] = p[2] + "'"
+       
                   
 def p_expression_downgrade(p):
     """expression : primitive
                   | func_call
-                  | '(' assignment ')'
-                  | matrix TRANSPOSITION"""
+                  | '(' assignment ')'"""
 
 
 def p_primitive(p):
@@ -148,6 +138,7 @@ def p_matrix(p):
        primitives  : primitive ',' primitives
                    | """
     # nie jestem 100% pewien pod kątem tej definicji
+
 
 def p_value(p):
     """value : matrix

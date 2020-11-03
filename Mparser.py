@@ -8,11 +8,13 @@ tokens = scanner.tokens
 
 precedence = (
     # to fill ...
+    ('right', '=', 'ADDASSIGN', 'SUBASSIGN', 'MULASSIGN', 'DIVASSIGN'),
+    ('left', 'EQ', 'NE'),
+    ('left', 'GE', 'LE', 'LT', 'GT'),
     ('left', '+', '-', 'DOTADD', 'DOTSUB'),
     ('left', '*', '/', 'DOTMUL', 'DOTDIV'),
     ('left', 'TRANSPOSITION'),
     ('right', 'UMINUS'),
-    ('left', 'GE', 'LE', 'LT', 'GT', 'EQ', 'NE'),
     # to fill ...
 )
 
@@ -51,7 +53,7 @@ def p_instructions_2(p):
 
 def p_instruction(p):
     """instruction : code_block
-                   | generic_expression ';'
+                   | generic_expression
                    | flow_control"""
 
 
@@ -60,17 +62,19 @@ def p_code_block(p):
 
 
 def p_generic_expression(p):
-    """generic_expression : assignment
-                          | expression
-                          | func_call"""
+    """generic_expression : assignment ';'
+                          : PRINT STR ';'
+                          : RETURN expression ';'
+    """
 
 
 def p_assignment(p):
-    """assignment : ID '=' generic_expression
-                  | ID ADDASSIGN generic_expression
-                  | ID SUBASSIGN generic_expression
-                  | ID MULASSIGN generic_expression
-                  | ID DIVASSIGN generic_expression"""
+    """assignment : ID '=' assignment
+                  | ID ADDASSIGN assignment
+                  | ID SUBASSIGN assignment
+                  | ID MULASSIGN assignment
+                  | ID DIVASSIGN assignment
+    """
 
 
 def p_expression_group(p):
@@ -112,6 +116,20 @@ def p_expression_dotbinop(p):
 def p_expression_uminus(p):
     """expression : - expression %prec UMINUS"""
     p[0] = -p[2]
+    
+def p_expression_comp(p):
+    """expression : expression LT expression
+                  | expression GT expression
+                  | expression EQ expression
+                  | expression NE expression
+                  | expression LE expression
+                  | expression GE expression"""
+                  
+def p_expression_downgrade(p):
+    """expression : primitive
+                  | func_call
+                  | '(' assignment ')'
+                  | matrix TRANSPOSITION"""
 
 
 def p_primitive(p):
@@ -134,6 +152,14 @@ def p_matrix(p):
 def p_value(p):
     """value : matrix
              | primitive"""
+             
+def p_func_call(p):
+    """func_call : EYE '(' INT ')'
+                 | ONES '(' INT ')'
+                 | ONES '(' INT ',' INT ')'
+                 | ZEROS '(' INT ')'
+                 | ZEROS '(' INT ',' INT ')'
+    """
 
 
 parser = yacc.yacc()

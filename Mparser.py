@@ -10,8 +10,8 @@ precedence = (
     # to fill ...
     ('left', '+', '-', 'DOTADD', 'DOTSUB'),
     ('left', '*', '/', 'DOTMUL', 'DOTDIV'),
-    ('left', "'")
-    ('right', 'UMINUS')
+    ('left', "'"),
+    ('right', 'UMINUS'),
     ('left', 'GE', 'LE', '<', '>', 'EQ', 'NE'),
     # to fill ...
 )
@@ -50,12 +50,12 @@ def p_instructions_2(p):
 
 def p_instruction(p):
     """instruction : code_block
-                   | generic_expression ;
+                   | generic_expression ';'
                    | flow_control"""
 
 
 def p_code_block(p):
-    """code_block : { instructions_opt }"""
+    """code_block : '{' instructions_opt '}'"""
 
 
 def p_generic_expression(p):
@@ -65,7 +65,7 @@ def p_generic_expression(p):
 
 
 def p_assignment(p):
-    """assignment : ID = generic_expression
+    """assignment : ID '=' generic_expression
                   | ID ADDASSIGN generic_expression
                   | ID SUBASSIGN generic_expression
                   | ID MULASSIGN generic_expression
@@ -84,11 +84,11 @@ def p_primitive(p):
     p[0] = p[1]
 
 def p_matrix(p):
-    """matrix      : [ matrix_rows ]
-       matrix_rows : matrix_row , matrix_rows
+    """matrix      : '[' matrix_rows ']'
+       matrix_rows : matrix_row ',' matrix_rows
                    | 
-       matrix_row  : [ primitives ]
-       primitives  : primitive , primitives
+       matrix_row  : '[' primitives ']'
+       primitives  : primitive ',' primitives
                    | """
     # nie jestem 100% pewien pod kątem tej definicji
     

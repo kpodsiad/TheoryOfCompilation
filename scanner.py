@@ -64,12 +64,14 @@ def t_newline(t):
 
 
 def t_error(t):
-    column = t.lexpos - t.lexer.last_newline
+    column = find_tok_column(t)
     print(
         f"Illegal character at line {t.lineno} column {column}: '{t.value[0]}'")
     t.lexer.skip(1)
 
-#TODO: function find_tok_column taking p (a parser???)
+
+def find_tok_column(t):
+    return t.lexpos - t.lexer.last_newline
 
 lexer = lex()
 lexer.last_newline = -1

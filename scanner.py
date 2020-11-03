@@ -10,8 +10,8 @@ reserved = {
 
 tokens = (
     'DOTADD', 'DOTSUB', 'DOTMUL', 'DOTDIV', 'ADDASSIGN', 'SUBASSIGN',
-    'MULASSIGN', 'DIVASSIGN', 'LE', 'GE', 'EQ', 'NE', 'ID', 'INT',
-    'FLOAT', 'STR'
+    'MULASSIGN', 'DIVASSIGN', 'LT', 'LE', 'GT', 'GE', 'EQ', 'NE', 'ID', 'INT',
+    'FLOAT', 'STR', 'TRANSPOSITION'
 ) + tuple(reserved.values())
 
 
@@ -23,12 +23,15 @@ t_ADDASSIGN = r'\+='
 t_SUBASSIGN = r'-='
 t_MULASSIGN = r'\*='
 t_DIVASSIGN = r'/='
+t_TRANSPOSITION = r"'"
+t_LT = r'<'
 t_LE = r'<='
 t_GE = r'>='
+t_GT = r'>'
 t_EQ = r'=='
 t_NE = r'\!='
 
-literals = "+-*/=()[]{}<>:',;"
+literals = "+-*/=()[]{}:,;"
 t_ignore = ' \t'
 t_ignore_COMMENT = r'\#.*'
 

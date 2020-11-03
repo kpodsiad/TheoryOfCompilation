@@ -10,9 +10,9 @@ precedence = (
     # to fill ...
     ('left', '+', '-', 'DOTADD', 'DOTSUB'),
     ('left', '*', '/', 'DOTMUL', 'DOTDIV'),
-    ('left', "'"),
+    ('left', 'TRANSPOSITION'),
     ('right', 'UMINUS'),
-    ('left', 'GE', 'LE', '<', '>', 'EQ', 'NE'),
+    ('left', 'GE', 'LE', 'LT', 'GT', 'EQ', 'NE'),
     # to fill ...
 )
 

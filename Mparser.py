@@ -50,7 +50,7 @@ def p_instructions_2(p):
 
 def p_instruction(p):
     """instruction : code_block
-                   | generic_expression
+                   | generic_expression ;
                    | flow_control"""
 
 
@@ -72,7 +72,28 @@ def p_assignment(p):
                   | ID DIVASSIGN generic_expression"""
 
 def p_expression_uminus(p):
-     'expression : - expression %prec UMINUS'
-     p[0] = -p[2]
+    """expression : - expression %prec UMINUS"""
+    p[0] = -p[2]
+     
+              
+def p_primitive(p):
+    """number    : INT
+                 | FLOAT
+       primitive : number
+                 | STR"""
+    p[0] = p[1]
+
+def p_matrix(p):
+    """matrix      : [ matrix_rows ]
+       matrix_rows : matrix_row , matrix_rows
+                   | 
+       matrix_row  : [ primitives ]
+       primitives  : primitive , primitives
+                   | """
+    # nie jestem 100% pewien pod kątem tej definicji
+    
+def p_value(p):
+    """value : matrix
+             | primitive"""
 
 parser = yacc.yacc()

@@ -162,6 +162,9 @@ def p_flow_control(p):
     """flow_control : IF '(' assignment ')' instruction %prec IFX
                     | IF '(' assignment ')' instruction ELSE instruction
                     | WHILE '(' assignment ')' instruction
+                    | IF '(' error ')' instruction %prec IFX
+                    | IF '(' error ')' instruction ELSE instruction
+                    | WHILE '(' error ')' instruction
                     | FOR ID '=' range instruction
        range        : id_or_int ':' id_or_int
        id_or_int    : ID

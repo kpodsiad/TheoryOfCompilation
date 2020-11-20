@@ -2,6 +2,11 @@
 
 import scanner
 import ply.yacc as yacc
+import numpy as np
+import abstractsyntaxtree as ast
+
+from warnings import filterwarnings
+filterwarnings('error', category=np.VisibleDeprecationWarning)
 
 
 tokens = scanner.tokens
@@ -136,10 +141,25 @@ def p_primitive(p):
 def p_matrix(p):
     """matrix      : '[' matrix_rows ']'
        matrix_rows : row ',' matrix_rows
-                   | row
-       row  : '[' primitives ']'
-       primitives  : primitive ',' primitives
-                   | primitive"""
+                   | row"""
+    if len(p) == 2: # matrix_rows : row
+        p[0] = [p[1]]
+    elif p[2] == ',': # matrix_rows : row ',' matrix_rows
+        p[0] = [p[1]] + p[3]
+    else: # matrix : '[' matrix_rows ']'
+        p[0] = np.array(p[2])
+        
+        
+def p_row(p):
+    """row        : '[' primitives ']'
+       primitives : primitive ',' primitives
+                  | primitive"""
+    if len(p) == 2: # primitives : primitive
+        p[0] = [p[1]]
+    elif p[2] == ',': # primitives : primitive ',' primitives
+        p[0] = [p[1]] + p[3]
+    else: # row : '[' primitives ']'
+        p[0] = np.array(p[2])
                    
 
 def p_value(p):
@@ -156,6 +176,19 @@ def p_func_call(p):
                  | ZEROS '(' INT ')'
                  | ZEROS '(' INT ',' INT ')'
     """
+    if p[1] == 'eye':
+        p[0] = np.eye(p[3])
+    elif p[1] == 'ones':
+        if len(p) == 5: # 1 arg
+            p[0] = np.ones((p[3], p[3]))
+        else: # 2 arg
+            p[0] = np.ones((p[3], p[5]))
+    else: # zeros
+        if len(p) == 5:
+            p[0] = np.zeros((p[3], p[3]))
+        else:
+            p[0] = np.zeros((p[3], p[5]))
+        
 
 
 def p_flow_control(p):

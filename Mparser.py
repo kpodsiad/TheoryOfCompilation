@@ -92,6 +92,8 @@ def p_assignment(p):
                   | lvalue DIVASSIGN assignment
                   | expression
     """
+    if len(p) == 4:
+        p[0] = ast.ASTAssignment()
 
 
 def p_expression_binop(p):

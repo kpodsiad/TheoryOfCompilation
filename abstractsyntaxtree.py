@@ -1,32 +1,43 @@
 from abc import ABC, abstractmethod
+import numpy as np
+import operator
+
+operators = {
+    '==': operator.eq, '!=': operator.ne,
+    '>': operator.gt, '<': operator.lt,
+    '>=': operator.ge, '<=': operator.le,
+    '+': operator.add, '-': operator.sub,
+    '.+': operator.add, '.-': operator.sub,
+}
 
 class ASTNode(ABC):
-    def __init__(self, parent=None):
+    def __init__(self, parent: ASTNode=None):
         self.value = None
         self.public_names = {}
         self.names = {}
         self.parent = parent if parent is not None else self
-        if self.parent != self:
-            self.public_names.update(self.parent.public_names)
-            self.parent.add_child(self)
+        # if self.parent != self:
+        #     self.public_names.update(self.parent.public_names)
+        #     self.parent.add_child(self)
     
     @abstractmethod
     def eval(self):
-        pass
+        self.public_names.update(self.parent.public_names)
     
-    @abstractmethod
-    def add_child(self, child):
-        pass
+    def attatch_parent(self, parent: ASTNode):
+        self.parent = parent
+        # self.names.update(parent.names)
+        # self.public_names.update(parent.public_names)
     
     
 class ASTList(ASTNode):
     def __init__(self, parent=None):
         super().__init__(parent)
         self.children = []
-        
-        
+         
     def eval(self):
         for child in self.children:
+            child.public_names.update(self.public_names)
             child.eval()
             self.public_names.update(child.public_names)
             
@@ -35,12 +46,34 @@ class ASTList(ASTNode):
         
 
 class ASTAssignment(ASTNode):
-    pass
+    def __init__(self, var: ASTLval, value: ASTNode, mode):
+        self.left = var
+        if mode == '=':
+            self.right = value
+        else:
+            self.right = ASTBinop(mode[1:], var, value)
 
 
 class ASTBinop(ASTNode):
-    pass
+    def __init__(self, op, left: ASTNode, right: ASTNode):
+        super().__init__(None)
+        self.func = operators[op]
+        self.left = left
+        self.right = right
+        self.left.attatch_parent(self)
+        self.right.attatch_parent(self)
         
+    def eval(self):
+        self.left.eval()
+        self.right.eval()
+        self.value = self.func(self.left.value, self.right.value)
+        self.public_names = {**left.public_names, **right.public_names}
+        self.names = {**left.names, **right.names}
+
     
 class ASTFlowControl(ASTNode):
+    pass
+
+
+class ASTLval(ASTNode):
     pass

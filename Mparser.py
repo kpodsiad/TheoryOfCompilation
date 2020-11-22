@@ -169,6 +169,7 @@ def p_value(p):
              | primitive
              | lvalue
              | row"""
+    p[0] = ast.ASTLiteral(p[1])
 
              
 def p_func_call(p):
@@ -205,6 +206,8 @@ def p_flow_control(p):
        id_or_int    : ID
                     | INT
     """
+    if p[1] == 'if':
+        p[0] = ast.ASTFlowControl
     
 
 

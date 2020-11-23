@@ -20,6 +20,7 @@ precedence = (
     ('left', '+', '-', 'DOTADD', 'DOTSUB'),
     ('left', '*', '/', 'DOTMUL', 'DOTDIV'),
     ('right', 'UMINUS'),
+    ('right', 'TRANSPOSITION'),
 )
 
 
@@ -235,7 +236,7 @@ def p_flow_control(p):
     if p[1] == 'if':
         p[0] = ast.IfElse(p[3], p[5], p[7] if len(p) == 8 else None)
     elif p[1] == 'while':
-        p[0] == ast.WhileLoop(p[3], p[5])
+        p[0] = ast.WhileLoop(p[3], p[5])
     else:
         p[0] = ast.ForLoop(p[2], p[4], p[5])
 

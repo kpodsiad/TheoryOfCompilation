@@ -64,10 +64,15 @@ def p_instruction(p):
                    | flow_control
                    | BREAK ';'
                    | CONTINUE ';' """
+    if p[1] in {'continue', 'break'}:
+        p[0] = ast.BreakCont(p[1] == 'break')
+    else:
+        p[0] = p[1]
 
 
 def p_code_block(p):
     """code_block : '{' instructions_opt '}'"""
+    p[0] = p[2]
 
 
 def p_generic_expression(p):
@@ -75,13 +80,28 @@ def p_generic_expression(p):
                           | print_expr
                           | RETURN expression
     """
+    if p[1] == 'return':
+        p[0] = ast.Function()
+        p[0].args.add_child(p[2])
+    else:
+        p[0] = p[1]
+    
 
 
 def p_print_expr(p):
     """print_expr : PRINT values
-       values : value ',' values
+       values : values ',' value
               | value
     """
+    if p[1] == 'print':
+        p[0] = ast.Function('print')
+        p[0].args = p[2]
+    elif len(p) == 2:
+        p[0] = ast.List()
+        p[0].add_child(p[1])
+    else:
+        p[0] = p[1]
+        p[1].add_child(p[3])
 
 
 def p_lvalue(p):
@@ -108,6 +128,8 @@ def p_assignment(p):
     """
     if len(p) == 4:
         p[0] = ast.Assignment(p[1], p[3], p[2])
+    else:
+        p[0] = p[1]
 
 
 def p_expression_binop(p):
@@ -135,7 +157,7 @@ def p_expression_uminus(p):
 
 def p_expression_transposition(p):
     """expression : expression TRANSPOSITION"""
-    p[0] = ast.Unop("'", p[2])
+    p[0] = ast.Unop('TRANSPOSE', p[1])
 
 
 def p_expression_downgrade(p):
@@ -195,18 +217,10 @@ def p_func_call(p):
                  | ZEROS '(' INT ')'
                  | ZEROS '(' INT ',' INT ')'
     """
-    if p[1] == 'eye':
-        p[0] = np.eye(p[3])
-    elif p[1] == 'ones':
-        if len(p) == 5:  # 1 arg
-            p[0] = np.ones((p[3], p[3]))
-        else:  # 2 arg
-            p[0] = np.ones((p[3], p[5]))
-    else:  # zeros
-        if len(p) == 5:
-            p[0] = np.zeros((p[3], p[3]))
-        else:
-            p[0] = np.zeros((p[3], p[5]))
+    p[0] = ast.Function(p[1])
+    p[0].args.add_child(ast.Literal(p[3]))
+    if len(p) == 7:  # 2 arg
+        p[0].args.add_child(ast.Literal(p[5]))
 
 
 def p_flow_control(p):
@@ -239,5 +253,7 @@ def p_id_or_int(p):
 
 
 parser = yacc.yacc()
+
+
 # https://stackoverflow.com/questions/51575487/python-lex-yacc-reports-infinite-recursion-detected-for-symbol
 # https://stackoverflow.com/questions/61751397/resolving-shift-reduce-conflicts-in-ply-yacc

@@ -33,22 +33,29 @@ def p_error(p):
 
 def p_program(p):
     """program : instructions_opt"""
+    p[0] = p[1]
 
 
 def p_instructions_opt_1(p):
     """instructions_opt : instructions """
+    p[0] = p[1]
 
 
 def p_instructions_opt_2(p):
     """instructions_opt : """
+    p[0] = ast.List()
 
 
 def p_instructions_1(p):
     """instructions : instructions instruction """
+    p[1].add_child(p[2])
+    p[0] = p[1]
 
 
 def p_instructions_2(p):
     """instructions : instruction """
+    p[0] = ast.List()
+    p[0].add_child(p[1])
 
 
 def p_instruction(p):
@@ -82,6 +89,13 @@ def p_lvalue(p):
               | ID '[' INT ']' 
               | ID '[' INT ',' INT ']'
     """
+    l = len(p)
+    if l == 2:
+        p[0] = ast.Lval(p[1])
+    elif l == 5:
+        p[0] = ast.Lval(p[1], (p[3],))
+    else:
+        p[0] = ast.Lval(p[1], (p[3], p[5]))
 
 
 def p_assignment(p):
@@ -93,7 +107,7 @@ def p_assignment(p):
                   | expression
     """
     if len(p) == 4:
-        p[0] = ast.ASTAssignment()
+        p[0] = ast.Assignment(p[1], p[3], p[2])
 
 
 def p_expression_binop(p):
@@ -104,32 +118,42 @@ def p_expression_binop(p):
                   | expression DOTADD expression
                   | expression DOTSUB expression
                   | expression DOTMUL expression
-                  | expression DOTDIV expression"""
-
-
-def p_expression_relop(p):
-    """expression : expression GE expression
+                  | expression DOTDIV expression
+                  | expression GE expression
                   | expression GT expression
                   | expression LE expression
                   | expression LT expression
                   | expression EQ expression
                   | expression NE expression"""
+    p[0] = ast.Binop(p[2], p[1], p[3])
 
 
 def p_expression_uminus(p):
     """expression : - expression %prec UMINUS"""
-    p[0] = '-' + p[1]
-      
-                  
+    p[0] = ast.Unop('-', p[2])
+
+
 def p_expression_transposition(p):
     """expression : expression TRANSPOSITION"""
-    p[0] = p[2] + "'"
-       
-                  
+    p[0] = ast.Unop("'", p[2])
+
+
 def p_expression_downgrade(p):
     """expression : value
                   | func_call
-                  | '(' assignment ')'"""
+                  | '(' expression ')'"""
+    if len(p) == 2:
+        p[0] = p[1]
+    else:
+        p[0] = p[2]
+
+
+def p_value(p):
+    """value : matrix
+             | primitive
+             | lvalue
+             | row"""
+    p[0] = ast.Literal(p[1])
 
 
 def p_primitive(p):
@@ -144,34 +168,26 @@ def p_matrix(p):
     """matrix      : '[' matrix_rows ']'
        matrix_rows : row ',' matrix_rows
                    | row"""
-    if len(p) == 2: # matrix_rows : row
+    if len(p) == 2:  # matrix_rows : row
         p[0] = [p[1]]
-    elif p[2] == ',': # matrix_rows : row ',' matrix_rows
+    elif p[2] == ',':  # matrix_rows : row ',' matrix_rows
         p[0] = [p[1]] + p[3]
-    else: # matrix : '[' matrix_rows ']'
+    else:  # matrix : '[' matrix_rows ']'
         p[0] = np.array(p[2])
-        
-        
+
+
 def p_row(p):
     """row        : '[' primitives ']'
        primitives : primitive ',' primitives
                   | primitive"""
-    if len(p) == 2: # primitives : primitive
+    if len(p) == 2:  # primitives : primitive
         p[0] = [p[1]]
-    elif p[2] == ',': # primitives : primitive ',' primitives
+    elif p[2] == ',':  # primitives : primitive ',' primitives
         p[0] = [p[1]] + p[3]
-    else: # row : '[' primitives ']'
+    else:  # row : '[' primitives ']'
         p[0] = np.array(p[2])
-                   
 
-def p_value(p):
-    """value : matrix
-             | primitive
-             | lvalue
-             | row"""
-    p[0] = ast.ASTLiteral(p[1])
 
-             
 def p_func_call(p):
     """func_call : EYE '(' INT ')'
                  | ONES '(' INT ')'
@@ -182,33 +198,44 @@ def p_func_call(p):
     if p[1] == 'eye':
         p[0] = np.eye(p[3])
     elif p[1] == 'ones':
-        if len(p) == 5: # 1 arg
+        if len(p) == 5:  # 1 arg
             p[0] = np.ones((p[3], p[3]))
-        else: # 2 arg
+        else:  # 2 arg
             p[0] = np.ones((p[3], p[5]))
-    else: # zeros
+    else:  # zeros
         if len(p) == 5:
             p[0] = np.zeros((p[3], p[3]))
         else:
             p[0] = np.zeros((p[3], p[5]))
-        
 
 
 def p_flow_control(p):
-    """flow_control : IF '(' assignment ')' instruction %prec IFX
-                    | IF '(' assignment ')' instruction ELSE instruction
-                    | WHILE '(' assignment ')' instruction
+    """flow_control : IF '(' expression ')' instruction %prec IFX
+                    | IF '(' expression ')' instruction ELSE instruction
+                    | WHILE '(' expression ')' instruction
                     | IF '(' error ')' instruction %prec IFX
                     | IF '(' error ')' instruction ELSE instruction
                     | WHILE '(' error ')' instruction
                     | FOR ID '=' range instruction
-       range        : id_or_int ':' id_or_int
-       id_or_int    : ID
-                    | INT
     """
     if p[1] == 'if':
-        p[0] = ast.ASTFlowControl
-    
+        p[0] = ast.IfElse(p[3], p[5], p[7] if len(p) == 8 else None)
+    elif p[1] == 'while':
+        p[0] == ast.WhileLoop(p[3], p[5])
+    else:
+        p[0] = ast.ForLoop(p[2], p[4], p[5])
+
+
+def p_range(p):
+    '''range : id_or_int ':' id_or_int
+    '''
+    p[0] = ast.Range(p[1], p[3])
+
+
+def p_id_or_int(p):
+    '''id_or_int : ID
+                 | INT'''
+    p[0] = p[1]
 
 
 parser = yacc.yacc()

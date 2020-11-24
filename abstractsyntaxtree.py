@@ -176,6 +176,3 @@ class BreakCont(Node):
 
     def eval(self):
         raise NotImplementedError('Not ready yet!')
-
-    def format(self, depth):
-        return '| ' * depth + ('BREAK\n' if self.is_break else 'CONTINUE\n')

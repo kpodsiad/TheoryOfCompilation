@@ -2,6 +2,7 @@ import sys
 
 from Mparser import parser
 from scanner import lexer as scanner
+from TreePrinter import TreePrinter
 
 if __name__ == '__main__':
 

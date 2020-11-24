@@ -1,4 +1,4 @@
-from abc import abstractmethod, ABCMeta
+from abc import ABCMeta
 import numpy as np
 import operator
 
@@ -36,10 +36,6 @@ class Node(metaclass=ABCMeta):
         # self.names.update(parent.names)
         # self.public_names.update(parent.public_names)
 
-    @abstractmethod
-    def format(self, depth):
-        pass
-
     def __str__(self):
         return self.format(0)
 
@@ -61,12 +57,6 @@ class List(Node):
     def add_child(self, child):
         self.children.append(child)
 
-    def format(self, depth):
-        ret = []
-        for child in self.children:
-            ret.append(child.format(depth))
-        return ''.join(ret)
-
 
 class Lval(Node):
     def __init__(self, obj, index=None):
@@ -76,13 +66,6 @@ class Lval(Node):
 
     def eval(self):
         raise NotImplementedError('Not ready yet!')
-
-    def format(self, depth):
-        ret = '| ' * depth + 'REF\n' + '| ' * (depth + 1) + self.obj + '\n'
-        if self.index is not None:
-            for a in self.index:
-                ret += '| ' * (depth + 1) + str(a) + '\n'
-        return ret
 
 
 class Binop(Node):
@@ -102,12 +85,6 @@ class Binop(Node):
         self.public_names = {**self.left.public_names, **self.right.public_names}
         self.names = {**self.left.names, **self.right.names}
 
-    def format(self, depth):
-        ret = ('| ' * depth + self.op + '\n'
-               + self.left.format(depth + 1)
-               + self.right.format(depth + 1))
-        return ret
-
 
 class Unop(Node):
     def __init__(self, op, var: Node):
@@ -116,11 +93,6 @@ class Unop(Node):
         self.func = unary[op]
         self.var = var
         self.var.attach_parent(self)
-
-    def format(self, depth):
-        ret = ('| ' * depth + self.op + '\n'
-               + self.var.format(depth + 1))
-        return ret
 
 
 class Assignment(Node):
@@ -135,12 +107,6 @@ class Assignment(Node):
     def eval(self):
         raise NotImplementedError('Not ready yet!')
 
-    def format(self, depth):
-        ret = ('| ' * depth + '=' + '\n'
-               + self.left.format(depth + 1)
-               + self.right.format(depth + 1))
-        return ret
-
 
 class IfElse(Node):
     def __init__(self, cond, if_block, else_block=None):
@@ -152,13 +118,6 @@ class IfElse(Node):
     def eval(self):
         raise NotImplementedError('Not ready yet!')
 
-    def format(self, depth):
-        return ('| ' * depth + 'IF\n'
-                + self.condition.format(depth + 1)
-                + self.if_block.format(depth + 1)
-                + (self.else_block.format(depth + 1)
-                   if self.else_block is not None else ''))
-
 
 class Literal(Node):
     def __init__(self, value):
@@ -167,13 +126,6 @@ class Literal(Node):
 
     def eval(self):
         raise NotImplementedError('Not ready yet!')
-
-    def format(self, depth):
-        # inspect.isclass(self.value) returns False for self.value that is Lval :c
-        if isinstance(self.value, Lval):
-            return self.value.format(depth)
-        else:
-            return '| ' * depth + str(self.value) + '\n'
 
 
 class WhileLoop(Node):
@@ -184,13 +136,6 @@ class WhileLoop(Node):
 
     def eval(self):
         raise NotImplementedError('Not ready yet!')
-
-    def format(self, depth):
-        ret = ('| ' * depth + 'WHILE' + '\n'
-               + self.condition.format(depth + 1)
-               + self.block.format(depth + 1)
-               )
-        return ret
 
 
 class ForLoop(Node):
@@ -203,14 +148,6 @@ class ForLoop(Node):
     def eval(self):
         raise NotImplementedError('Not ready yet!')
 
-    def format(self, depth):
-        ret = ('| ' * depth + 'FOR' + '\n'
-               + self.varname.format(depth + 1)
-               + self.range_arg.format(depth + 1)
-               + self.block.format(depth + 1)
-               )
-        return ret
-
 
 class Range(Node):
     def __init__(self, start, end):
@@ -221,13 +158,6 @@ class Range(Node):
     def eval(self):
         raise NotImplementedError('Not ready yet!')
 
-    def format(self, depth):
-        ret = ('| ' * depth + 'RANGE' + '\n'
-               + '| ' * (depth + 1) + str(self.start)
-               + '| ' * (depth + 1) + str(self.end)
-               )
-        return ret
-
 
 class Function(Node):
     def __init__(self, name):
@@ -237,12 +167,6 @@ class Function(Node):
 
     def eval(self):
         raise NotImplementedError('Not ready yet!')
-
-    def format(self, depth):
-        ret = ('| ' * depth + self.name + '\n'
-               + self.args.format(depth + 1)
-               )
-        return ret
 
 
 class BreakCont(Node):

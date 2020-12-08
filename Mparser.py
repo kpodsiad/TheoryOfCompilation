@@ -238,7 +238,7 @@ def p_flow_control(p):
     elif p[1] == 'while':
         p[0] = ast.WhileLoop(p[3], p[5])
     else:
-        p[0] = ast.ForLoop(p[2], p[4], p[5])
+        p[0] = ast.ForLoop(ast.Lval(p[2]), p[4], p[5])
 
 
 def p_range(p):

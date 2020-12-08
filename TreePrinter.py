@@ -85,8 +85,8 @@ class TreePrinter:
     @addToClass(AST.Range)
     def format(self: AST.Range, depth):
         ret = ('| ' * depth + 'RANGE' + '\n'
-               + '| ' * (depth + 1) + str(self.start)
-               + '| ' * (depth + 1) + str(self.end)
+               + '| ' * (depth + 1) + str(self.start) + '\n'
+               + '| ' * (depth + 1) + str(self.end) + '\n'
                )
         return ret
 

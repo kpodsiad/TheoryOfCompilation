@@ -33,7 +33,8 @@ def p_error(p):
 
 
 def p_program(p):
-    """program : instructions_opt"""
+    """program : instructions_opt
+    """
     p[0] = p[1]
 
 
@@ -72,7 +73,8 @@ def p_instruction(p):
 
 
 def p_code_block(p):
-    """code_block : '{' instructions_opt '}'"""
+    """code_block : '{' instructions_opt '}'
+    """
     p[0] = p[2]
 
 
@@ -91,19 +93,22 @@ def p_generic_expression(p):
 
 def p_print_expr(p):
     """print_expr : PRINT values
-       values : values ',' value
+    """
+    p[0] = ast.Function('print')
+    p[0].args = p[2]
+    
+        
+
+def p_values_list(p):
+    """values : values ',' value
               | value
     """
-    if p[1] == 'print':
-        p[0] = ast.Function('print')
-        p[0].args = p[2]
-    elif len(p) == 2:
+    if len(p) == 2:
         p[0] = ast.List()
         p[0].add_child(p[1])
     else:
         p[0] = p[1]
         p[1].add_child(p[3])
-
 
 def p_lvalue(p):
     """lvalue : ID
@@ -147,24 +152,28 @@ def p_expression_binop(p):
                   | expression LE expression
                   | expression LT expression
                   | expression EQ expression
-                  | expression NE expression"""
+                  | expression NE expression
+    """
     p[0] = ast.Binop(p[2], p[1], p[3])
 
 
 def p_expression_uminus(p):
-    """expression : - expression %prec UMINUS"""
+    """expression : - expression %prec UMINUS
+    """
     p[0] = ast.Unop('-', p[2])
 
 
 def p_expression_transposition(p):
-    """expression : expression TRANSPOSITION"""
+    """expression : expression TRANSPOSITION
+    """
     p[0] = ast.Unop('TRANSPOSE', p[1])
 
 
 def p_expression_downgrade(p):
     """expression : value
                   | func_call
-                  | '(' expression ')'"""
+                  | '(' expression ')'
+    """
     if len(p) == 2:
         p[0] = p[1]
     else:
@@ -175,40 +184,55 @@ def p_value(p):
     """value : matrix
              | primitive
              | lvalue
-             | row"""
+             | row
+    """
     p[0] = ast.Literal(p[1])
 
 
 def p_primitive(p):
+    """primitive : number
+                 | STR
+    """
+    p[0] = p[1]
+    
+
+def p_number(p):
     """number    : INT
                  | FLOAT
-       primitive : number
-                 | STR"""
+    """
     p[0] = p[1]
 
 
 def p_matrix(p):
     """matrix      : '[' matrix_rows ']'
-       matrix_rows : row ',' matrix_rows
-                   | row"""
+    """
+    p[0] = np.array(p[2])
+        
+
+def p_matrix_rows(p):
+    """matrix_rows : row ',' matrix_rows
+                   | row
+    """
     if len(p) == 2:  # matrix_rows : row
         p[0] = [p[1]]
     elif p[2] == ',':  # matrix_rows : row ',' matrix_rows
         p[0] = [p[1]] + p[3]
-    else:  # matrix : '[' matrix_rows ']'
-        p[0] = np.array(p[2])
 
 
 def p_row(p):
     """row        : '[' primitives ']'
-       primitives : primitive ',' primitives
-                  | primitive"""
+    """
+    p[0] = np.array(p[2])
+        
+
+def p_primitives(p):
+    """primitives : primitive ',' primitives
+                  | primitive
+    """
     if len(p) == 2:  # primitives : primitive
         p[0] = [p[1]]
-    elif p[2] == ',':  # primitives : primitive ',' primitives
+    else:  # primitives : primitive ',' primitives
         p[0] = [p[1]] + p[3]
-    else:  # row : '[' primitives ']'
-        p[0] = np.array(p[2])
 
 
 def p_func_call(p):
@@ -242,14 +266,15 @@ def p_flow_control(p):
 
 
 def p_range(p):
-    '''range : id_or_int ':' id_or_int
-    '''
+    """range : id_or_int ':' id_or_int
+    """
     p[0] = ast.Range(p[1], p[3])
 
 
 def p_id_or_int(p):
-    '''id_or_int : ID
-                 | INT'''
+    """id_or_int : ID
+                 | INT
+    """
     p[0] = p[1]
 
 

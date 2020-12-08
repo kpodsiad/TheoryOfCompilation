@@ -45,7 +45,7 @@ def p_instructions_opt_1(p):
 
 def p_instructions_opt_2(p):
     """instructions_opt : """
-    p[0] = ast.List()
+    p[0] = ast.List(p.lineno)
 
 
 def p_instructions_1(p):
@@ -56,7 +56,7 @@ def p_instructions_1(p):
 
 def p_instructions_2(p):
     """instructions : instruction """
-    p[0] = ast.List()
+    p[0] = ast.List(p.lineno)
     p[0].add_child(p[1])
 
 
@@ -67,7 +67,7 @@ def p_instruction(p):
                    | BREAK ';'
                    | CONTINUE ';' """
     if p[1] in {'continue', 'break'}:
-        p[0] = ast.BreakCont(p[1] == 'break')
+        p[0] = ast.BreakCont(p.lineno, p[1] == 'break')
     else:
         p[0] = p[1]
 
@@ -84,7 +84,7 @@ def p_generic_expression(p):
                           | RETURN expression
     """
     if p[1] == 'return':
-        p[0] = ast.Function()
+        p[0] = ast.Function(p.lineno)
         p[0].args.add_child(p[2])
     else:
         p[0] = p[1]
@@ -94,7 +94,7 @@ def p_generic_expression(p):
 def p_print_expr(p):
     """print_expr : PRINT values
     """
-    p[0] = ast.Function('print')
+    p[0] = ast.Function(p.lineno, 'print')
     p[0].args = p[2]
     
         
@@ -104,7 +104,7 @@ def p_values_list(p):
               | value
     """
     if len(p) == 2:
-        p[0] = ast.List()
+        p[0] = ast.List(p.lineno)
         p[0].add_child(p[1])
     else:
         p[0] = p[1]
@@ -117,11 +117,11 @@ def p_lvalue(p):
     """
     l = len(p)
     if l == 2:
-        p[0] = ast.Lval(p[1])
+        p[0] = ast.Lval(p.lineno, p[1])
     elif l == 5:
-        p[0] = ast.Lval(p[1], (p[3],))
+        p[0] = ast.Lval(p.lineno, p[1], (p[3],))
     else:
-        p[0] = ast.Lval(p[1], (p[3], p[5]))
+        p[0] = ast.Lval(p.lineno, p[1], (p[3], p[5]))
 
 
 def p_assignment(p):
@@ -133,7 +133,7 @@ def p_assignment(p):
                   | expression
     """
     if len(p) == 4:
-        p[0] = ast.Assignment(p[1], p[3], p[2])
+        p[0] = ast.Assignment(p.lineno, p[1], p[3], p[2])
     else:
         p[0] = p[1]
 
@@ -154,19 +154,19 @@ def p_expression_binop(p):
                   | expression EQ expression
                   | expression NE expression
     """
-    p[0] = ast.Binop(p[2], p[1], p[3])
+    p[0] = ast.Binop(p.lineno, p[2], p[1], p[3])
 
 
 def p_expression_uminus(p):
     """expression : - expression %prec UMINUS
     """
-    p[0] = ast.Unop('-', p[2])
+    p[0] = ast.Unop(p.lineno, '-', p[2])
 
 
 def p_expression_transposition(p):
     """expression : expression TRANSPOSITION
     """
-    p[0] = ast.Unop('TRANSPOSE', p[1])
+    p[0] = ast.Unop(p.lineno, 'TRANSPOSE', p[1])
 
 
 def p_expression_downgrade(p):
@@ -186,7 +186,7 @@ def p_value(p):
              | lvalue
              | row
     """
-    p[0] = ast.Literal(p[1])
+    p[0] = ast.Literal(p.lineno, p[1])
 
 
 def p_primitive(p):
@@ -242,10 +242,10 @@ def p_func_call(p):
                  | ZEROS '(' INT ')'
                  | ZEROS '(' INT ',' INT ')'
     """
-    p[0] = ast.Function(p[1])
-    p[0].args.add_child(ast.Literal(p[3]))
+    p[0] = ast.Function(p.lineno, p[1])
+    p[0].args.add_child(ast.Literal(p.lineno, p[3]))
     if len(p) == 7:  # 2 arg
-        p[0].args.add_child(ast.Literal(p[5]))
+        p[0].args.add_child(ast.Literal(p.lineno, p[5]))
 
 
 def p_flow_control(p):
@@ -258,24 +258,28 @@ def p_flow_control(p):
                     | FOR ID '=' range instruction
     """
     if p[1] == 'if':
-        p[0] = ast.IfElse(p[3], p[5], p[7] if len(p) == 8 else None)
+        p[0] = ast.IfElse(p.lineno, p[3], p[5], p[7] if len(p) == 8 else None)
     elif p[1] == 'while':
-        p[0] = ast.WhileLoop(p[3], p[5])
+        p[0] = ast.WhileLoop(p.lineno, p[3], p[5])
     else:
-        p[0] = ast.ForLoop(ast.Lval(p[2]), p[4], p[5])
+        p[0] = ast.ForLoop(p.lineno, ast.Lval(p[2]), p[4], p[5])
 
 
 def p_range(p):
     """range : id_or_int ':' id_or_int
     """
-    p[0] = ast.Range(p[1], p[3])
+    p[0] = ast.Range(p.lineno, p[1], p[3])
 
 
-def p_id_or_int(p):
+def p_id_or_int_id(p):
     """id_or_int : ID
-                 | INT
     """
-    p[0] = p[1]
+    p[0] = ast.Lval(p.lineno, p[1])
+    
+def p_id_or_int_int(p):
+    """id_or_int : INT
+    """
+    p[0] = ast.Literal(p.lineno, p[1])
 
 
 parser = yacc.yacc()

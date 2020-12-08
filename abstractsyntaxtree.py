@@ -18,11 +18,12 @@ unary = {
 
 
 class Node(metaclass=ABCMeta):
-    def __init__(self, parent=None):
+    def __init__(self, line, parent=None):
         self.value = None
         self.public_names = {}
         self.names = {}
         self.parent = parent if parent is not None else self
+        self.line_no = line
         # if self.parent != self:
         #     self.public_names.update(self.parent.public_names)
         #     self.parent.add_child(self)
@@ -44,8 +45,8 @@ class Node(metaclass=ABCMeta):
 
 
 class List(Node):
-    def __init__(self, parent=None):
-        super().__init__(parent)
+    def __init__(self, line, parent=None):
+        super().__init__(line, parent)
         self.children = []
 
     def eval(self):
@@ -59,8 +60,8 @@ class List(Node):
 
 
 class Lval(Node):
-    def __init__(self, obj, index=None):
-        super().__init__()
+    def __init__(self, line, obj, index=None):
+        super().__init__(line)
         self.obj = obj
         self.index = index
 
@@ -69,8 +70,8 @@ class Lval(Node):
 
 
 class Binop(Node):
-    def __init__(self, op, left: Node, right: Node):
-        super().__init__(None)
+    def __init__(self, line, op, left: Node, right: Node):
+        super().__init__(line)
         self.op = op
         self.func = operators[op]
         self.left = left
@@ -87,8 +88,8 @@ class Binop(Node):
 
 
 class Unop(Node):
-    def __init__(self, op, var: Node):
-        super().__init__(None)
+    def __init__(self, line, op, var: Node):
+        super().__init__(line)
         self.op = op
         self.func = unary[op]
         self.var = var
@@ -96,8 +97,8 @@ class Unop(Node):
 
 
 class Assignment(Node):
-    def __init__(self, var: Lval, value: Node, mode):
-        super().__init__()
+    def __init__(self, line, var: Lval, value: Node, mode):
+        super().__init__(line)
         self.left = var
         if mode == '=':
             self.right = value
@@ -109,8 +110,8 @@ class Assignment(Node):
 
 
 class IfElse(Node):
-    def __init__(self, cond, if_block, else_block=None):
-        super().__init__()
+    def __init__(self, line, cond, if_block, else_block=None):
+        super().__init__(line)
         self.condition = cond
         self.if_block = if_block
         self.else_block = else_block
@@ -120,17 +121,21 @@ class IfElse(Node):
 
 
 class Literal(Node):
-    def __init__(self, value):
-        super().__init__()
+    def __init__(self, line, value):
+        super().__init__(line)
+        self.context = None
         self.value = value
+        self.type = type(value)
+        if self.type == np.array:
+            self.context = (value.dtype, value.shape)
 
     def eval(self):
         raise NotImplementedError('Not ready yet!')
 
 
 class WhileLoop(Node):
-    def __init__(self, condition, block):
-        super().__init__()
+    def __init__(self, line, condition, block):
+        super().__init__(line)
         self.condition = condition
         self.block = block
 
@@ -139,8 +144,8 @@ class WhileLoop(Node):
 
 
 class ForLoop(Node):
-    def __init__(self, varname, range_arg, block):
-        super().__init__()
+    def __init__(self, line, varname, range_arg, block):
+        super().__init__(line)
         self.varname = varname
         self.range_arg = range_arg
         self.block = block
@@ -150,8 +155,8 @@ class ForLoop(Node):
 
 
 class Range(Node):
-    def __init__(self, start, end):
-        super().__init__()
+    def __init__(self, line, start, end):
+        super().__init__(line)
         self.start = start
         self.end = end
 
@@ -160,8 +165,8 @@ class Range(Node):
 
 
 class Function(Node):
-    def __init__(self, name):
-        super().__init__()
+    def __init__(self, line, name):
+        super().__init__(line)
         self.name = name
         self.args = List()
 
@@ -170,9 +175,13 @@ class Function(Node):
 
 
 class BreakCont(Node):
-    def __init__(self, is_break):
-        super().__init__()
+    def __init__(self, line, is_break):
+        super().__init__(line)
         self.is_break = is_break
+        
+    @parameter
+    def name(self):
+        return 'break' if self.is_break else 'continue'
 
     def eval(self):
         raise NotImplementedError('Not ready yet!')

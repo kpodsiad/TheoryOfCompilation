@@ -3,6 +3,7 @@ import sys
 from Mparser import parser
 from scanner import lexer as scanner
 from TreePrinter import TreePrinter
+from TypeChecker import NodeVisitor
 
 if __name__ == '__main__':
 
@@ -15,4 +16,5 @@ if __name__ == '__main__':
 
     text = file.read()
     ast = parser.parse(text, lexer=scanner)
-    ast.print_tree()
+    visitor = NodeVisitor()
+    visitor.visit(ast)

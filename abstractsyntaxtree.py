@@ -168,7 +168,7 @@ class Function(Node):
     def __init__(self, line, name):
         super().__init__(line)
         self.name = name
-        self.args = List()
+        self.args = List(self.line_no)
 
     def eval(self):
         raise NotImplementedError('Not ready yet!')
@@ -179,7 +179,7 @@ class BreakCont(Node):
         super().__init__(line)
         self.is_break = is_break
         
-    @parameter
+    @property
     def name(self):
         return 'break' if self.is_break else 'continue'
 

@@ -4,7 +4,13 @@ from numpy import array, int64, float64, unicode_
 from sys import stderr
 
 binop_type = {op: {first: {}} for op, first in product(
-    [AST.operators.values()], [int, float, str, array])}
+    AST.operators.keys(), [int, float, str, array])}
+
+for op in AST.operators.keys():
+    binop_type[op] = {}
+    for first in [int, float, str, array]:
+        binop_type[op][first] = {}
+        
 
 
 binop_type['+'][str][str] = str
@@ -115,6 +121,8 @@ class NodeVisitor(object):
         self.nested_loops = 0
 
     def visit(self, node):
+        if node is None:
+            return (None,)
         method = 'visit_' + node.__class__.__name__
         visitor = getattr(self, method, self.generic_visit)
         return visitor(node)
@@ -164,7 +172,7 @@ class NodeVisitor(object):
     def visit_Literal(self, node: AST.Literal):
         if node.context:
             return (node.type, *node.context)
-        return node.type
+        return (node.type, )
 
 
     def visit_Binop(self, node: AST.Binop):
@@ -258,14 +266,9 @@ class NodeVisitor(object):
         ref_info = self.visit(node.value)
         old_one = None
         for layer in self.namespace:
-            if node.var.obj in layer:
-                old_one = layer[node.var.obj]
-                layer[node.var.obj] = ref_info
-        
-        # if old_one is not None:
-        #     print(node.line_no, old_one)
-        
-        # self.namespace[-1][node.var.obj] = ref_info
+            if node.left.obj in layer:
+                old_one = layer[node.left.obj]
+                layer[node.left.obj] = ref_info
             
             
     def visit_IfElse(self, node: AST.IfElse):
@@ -289,8 +292,8 @@ class NodeVisitor(object):
         self.nested_loops -= 1
 
     def visit_Range(self, node: AST.Range):
-        left_type = self.visit(node.left)
-        right_type = self.visit(node.right)
+        left_type = self.visit(node.start)
+        right_type = self.visit(node.end)
         if left_type[0] != int or right_type[0] != int:
             print(node.line_no, 'Range values must be integers', file=stderr)
 

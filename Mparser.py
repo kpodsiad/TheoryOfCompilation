@@ -5,6 +5,7 @@ import ply.yacc as yacc
 import numpy as np
 import abstractsyntaxtree as ast
 
+from sys import stderr
 from warnings import filterwarnings
 filterwarnings('error', category=np.VisibleDeprecationWarning)
 
@@ -209,7 +210,11 @@ def p_number(p):
 def p_matrix(p):
     """matrix      : '[' matrix_rows ']'
     """
-    p[0] = np.array(p[2])
+    try:
+        p[0] = np.array(p[2])
+    except np.VisibleDeprecationWarning:
+        print(p.lexer.lineno, 'Cannot define non-rectangular matrix', file=stderr)
+        p[0] = None
         
 
 def p_matrix_rows(p):

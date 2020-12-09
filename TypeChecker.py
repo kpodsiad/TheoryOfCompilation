@@ -1,14 +1,14 @@
 import abstractsyntaxtree as AST
 from itertools import product
-from numpy import array, int64, float64, unicode_
+from numpy import array, int64, float64, unicode_, ndarray
 from sys import stderr
 
 binop_type = {op: {first: {}} for op, first in product(
-    AST.operators.keys(), [int, float, str, array])}
+    AST.operators.keys(), [int, float, str, ndarray])}
 
 for op in AST.operators.keys():
     binop_type[op] = {}
-    for first in [int, float, str, array]:
+    for first in [int, float, str, ndarray]:
         binop_type[op][first] = {}
         
 
@@ -31,9 +31,9 @@ binop_type['*'][int][int] = int
 binop_type['*'][int][float] = float
 binop_type['*'][float][int] = float
 binop_type['*'][float][float] = float
-binop_type['+'][array][array] = array
-binop_type['-'][array][array] = array
-binop_type['*'][array][array] = array
+binop_type['+'][ndarray][ndarray] = ndarray
+binop_type['-'][ndarray][ndarray] = ndarray
+binop_type['*'][ndarray][ndarray] = ndarray
 
 binop_type['.+'][int][int] = int
 binop_type['.+'][int][float] = float
@@ -52,26 +52,26 @@ binop_type['.*'][int][float] = float
 binop_type['.*'][float][int] = float
 binop_type['.*'][float][float] = float
 
-binop_type['.+'][array][int] = array
-binop_type['.+'][array][float] = array
-binop_type['.+'][array][array] = array
-binop_type['.+'][int][array] = array
-binop_type['.+'][float][array] = array
-binop_type['.-'][array][int] = array
-binop_type['.-'][array][float] = array
-binop_type['.-'][array][array] = array
-binop_type['.-'][int][array] = array
-binop_type['.-'][float][array] = array
-binop_type['.*'][array][int] = array
-binop_type['.*'][array][float] = array
-binop_type['.*'][array][array] = array
-binop_type['.*'][int][array] = array
-binop_type['.*'][float][array] = array
-binop_type['./'][array][int] = array
-binop_type['./'][array][float] = array
-binop_type['./'][array][array] = array
-binop_type['./'][int][array] = array
-binop_type['./'][float][array] = array
+binop_type['.+'][ndarray][int] = ndarray
+binop_type['.+'][ndarray][float] = ndarray
+binop_type['.+'][ndarray][ndarray] = ndarray
+binop_type['.+'][int][ndarray] = ndarray
+binop_type['.+'][float][ndarray] = ndarray
+binop_type['.-'][ndarray][int] = ndarray
+binop_type['.-'][ndarray][float] = ndarray
+binop_type['.-'][ndarray][ndarray] = ndarray
+binop_type['.-'][int][ndarray] = ndarray
+binop_type['.-'][float][ndarray] = ndarray
+binop_type['.*'][ndarray][int] = ndarray
+binop_type['.*'][ndarray][float] = ndarray
+binop_type['.*'][ndarray][ndarray] = ndarray
+binop_type['.*'][int][ndarray] = ndarray
+binop_type['.*'][float][ndarray] = ndarray
+binop_type['./'][ndarray][int] = ndarray
+binop_type['./'][ndarray][float] = ndarray
+binop_type['./'][ndarray][ndarray] = ndarray
+binop_type['./'][int][ndarray] = ndarray
+binop_type['./'][float][ndarray] = ndarray
 
 binop_type['<'][int][int] = int
 binop_type['<'][int][float] = int
@@ -100,7 +100,7 @@ binop_type['!='][float][float] = int
 
 
 def type_to_str(type_):
-    if type_ == array:
+    if type_ == ndarray:
         return 'array'
     elif type_ == int:
         return 'int'
@@ -112,7 +112,7 @@ def type_to_str(type_):
         return str(type_)
 
 def dtype_to_type(type_):
-    if type_ in (int, float, str, array):
+    if type_ in (int, float, str, ndarray):
         return type_
     if type_.kind in 'SU': # S - (byte-)string, U - Unicode
         return str
@@ -161,7 +161,7 @@ class NodeVisitor(object):
         for layer in self.namespace:
             if node.obj in layer:
                 ref_info = layer[node.obj]
-                if node.index is not None and ref_info[0] != array:
+                if node.index is not None and ref_info[0] != ndarray:
                     print(node.line_no, 'Cannot subscript a scalar', file=stderr)
                 elif node.index is not None:
                     if len(node.index) > len(ref_info[2]):
@@ -197,9 +197,9 @@ class NodeVisitor(object):
                   .format(type_to_str(left_type[0]), type_to_str(right_type[0])), file=stderr)
         
         # [matrix,vector] x [matrix,vector]
-        if left_type[0] == right_type[0] == array: 
+        if left_type[0] == right_type[0] == ndarray: 
             try:
-                ret_context.append(binop_type[node.op[:-1]][dtype_to_type(left_type[1])][dtype_to_type(right_type[1])])
+                ret_context.append(binop_type[node.op[-1:]][dtype_to_type(left_type[1])][dtype_to_type(right_type[1])])
             except KeyError:
                 print(node.line_no, 'Unsupported element types for operator {}: {} and {}'
                       .format(node.op, type_to_str(dtype_to_type(left_type[1])), type_to_str(dtype_to_type(right_type[1]))))
@@ -272,7 +272,7 @@ class NodeVisitor(object):
     def visit_Unop(self, node: AST.Unop):
         val_type = self.visit(node.var)
         if node.op == "'":
-            if val_type[0]==array:
+            if val_type[0]==ndarray:
                 return val_type
             else:
                 print(node.line_no, 'Type mismatch for operator \': {}'
@@ -329,9 +329,9 @@ class NodeVisitor(object):
                     print(node.line_no, 'Arguments for {} must be integral'.format(node.name))
             args = tuple(child.value for child in node.args.children)
             if len(args) == 1:
-                return (array, int, args*2)
+                return (ndarray, int, args*2)
             else:
-                return (array, int, args)
+                return (ndarray, int, args)
         else: 
             return (None,)
     

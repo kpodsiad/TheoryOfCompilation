@@ -127,7 +127,10 @@ class Literal(Node):
         self.value = value
         self.val_type = type(value)
         if self.val_type == np.array:
+            self.val_type = np.ndarray
+        if self.val_type == np.ndarray:
             self.context = (value.dtype, value.shape)
+
 
     def eval(self):
         raise NotImplementedError('Not ready yet!')

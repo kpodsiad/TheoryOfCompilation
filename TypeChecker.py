@@ -263,7 +263,7 @@ class NodeVisitor(object):
         return (None,)
 
     def visit_Assignment(self, node: AST.Assignment):
-        ref_info = self.visit(node.value)
+        ref_info = self.visit(node.right)
         old_one = None
         for layer in self.namespace:
             if node.left.obj in layer:
@@ -298,7 +298,7 @@ class NodeVisitor(object):
             print(node.line_no, 'Range values must be integers', file=stderr)
 
     def visit_Function(self, node: AST.Function):
-        if node.name != 'print':
+        if node.name and node.name != 'print':
             for arg in node.args.children:
                 if self.visit(arg)[0] != int:
                     print(node.line_no, 'Arguments for {} must be integral'.format(node.name))

@@ -74,7 +74,7 @@ def t_error(t):
 
 
 def find_tok_column(t):
-    return t.lexpos() - t.lexer.last_newline
+    return t.lexpos - t.lexer.last_newline
 
 lexer = lex()
 lexer.last_newline = -1

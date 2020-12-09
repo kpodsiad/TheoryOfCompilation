@@ -165,7 +165,7 @@ class Range(Node):
 
 
 class Function(Node):
-    def __init__(self, line, name):
+    def __init__(self, line, name=None):
         super().__init__(line)
         self.name = name
         self.args = List(self.line_no)

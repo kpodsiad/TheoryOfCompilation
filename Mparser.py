@@ -67,7 +67,7 @@ def p_instruction(p):
                    | BREAK ';'
                    | CONTINUE ';' """
     if p[1] in {'continue', 'break'}:
-        p[0] = ast.BreakCont(p.lexer.lineno, p[1] == 'break')
+        p[0] = ast.BreakCont(p.slice[1].lineno, p[1] == 'break')
     else:
         p[0] = p[1]
 

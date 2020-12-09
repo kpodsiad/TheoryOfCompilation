@@ -99,7 +99,17 @@ binop_type['!='][float][int] = int
 binop_type['!='][float][float] = int
 
 
-
+def type_to_str(type_):
+    if type_ == array:
+        return 'array'
+    elif type_ == int:
+        return 'int'
+    elif type_ == float:
+        return 'float'
+    elif type_ == str:
+        return 'str'
+    else:
+        return str(type_)
 
 def dtype_to_type(type_):
     if type_ in (int, float, str, array):
@@ -171,8 +181,8 @@ class NodeVisitor(object):
     
     def visit_Literal(self, node: AST.Literal):
         if node.context:
-            return (node.type, *node.context)
-        return (node.type, )
+            return (node.val_type, *node.context)
+        return (node.val_type, )
 
 
     def visit_Binop(self, node: AST.Binop):
@@ -183,19 +193,26 @@ class NodeVisitor(object):
         try:
             ret_type = binop_type[node.op][left_type[0]][right_type[0]]
         except KeyError:
-            print(node.line_no, 'Cannot apply binary operation: incompatible operands types', file=stderr)
+            print(node.line_no, 'Cannot apply binary operation: incompatible operands types: {} and {}'
+                  .format(type_to_str(left_type[0]), type_to_str(right_type[0])), file=stderr)
         
         # [matrix,vector] x [matrix,vector]
         if left_type[0] == right_type[0] == array: 
-            ret_context.append(binop_type[node.op[:-1]][dtype_to_type(left_type[1])][dtype_to_type(right_type[1])])
+            try:
+                ret_context.append(binop_type[node.op[:-1]][dtype_to_type(left_type[1])][dtype_to_type(right_type[1])])
+            except KeyError:
+                print(node.line_no, 'Unsupported element types for operator {}: {} and {}'
+                      .format(node.op, type_to_str(dtype_to_type(left_type[1])), type_to_str(dtype_to_type(right_type[1]))))
             left_shape, right_shape = left_type[2], right_type[2]
             # matrix-matrix
             if len(left_shape) == len(right_shape) == 2: 
                 (m,n1), (n2,k) = left_shape, right_shape
                 if n1 != n2 and node.op == '*':
-                    print(node.line_no, 'Operands could not be broadcast together with shapes {} {}'.format(left_shape, right_shape), file=stderr)
+                    print(node.line_no, 'Operands could not be broadcast together with shapes {} {}'
+                          .format(left_shape, right_shape), file=stderr)
                 elif left_shape != right_shape:
-                    print(node.line_no, 'Operands could not be broadcast together with shapes {} {}'.format(left_shape, right_shape), file=stderr)
+                    print(node.line_no, 'Operands could not be broadcast together with shapes {} {}'
+                          .format(left_shape, right_shape), file=stderr)
                 elif node.op == '/':
                     print(node.line_no, 'Cannot divide by matrix', file=stderr)
                 elif node.op == '*':
@@ -206,9 +223,11 @@ class NodeVisitor(object):
             elif len(left_shape) == 1: 
                 (n1,), (n2, k) = left_shape, right_shape
                 if n1 != n2 and node.op == '*':
-                    print(node.line_no, 'Operands could not be broadcast together with shapes {} {}'.format(left_shape, right_shape), file=stderr)
+                    print(node.line_no, 'Operands could not be broadcast together with shapes {} {}'
+                          .format(left_shape, right_shape), file=stderr)
                 elif (1,)+left_shape != right_shape:
-                    print(node.line_no, 'Operands could not be broadcast together with shapes {} {}'.format(left_shape, right_shape), file=stderr)
+                    print(node.line_no, 'Operands could not be broadcast together with shapes {} {}'
+                          .format(left_shape, right_shape), file=stderr)
                 elif node.op == '/':
                     print(node.line_no, 'Cannot divide by matrix', file=stderr)
                 elif node.op == '*':
@@ -219,7 +238,8 @@ class NodeVisitor(object):
             elif len(right_shape) == 1:
                 (m, n1), (n2,) = left_shape, right_shape
                 if n1 != 1 and node.op == '*':
-                    print(node.line_no, 'Operands could not be broadcast together with shapes {} {}'.format(left_shape, right_shape), file=stderr)
+                    print(node.line_no, 'Operands could not be broadcast together with shapes {} {}'
+                          .format(left_shape, right_shape), file=stderr)
                 elif node.op == '/':
                     print(node.line_no, 'Cannot divide by vector', file=stderr)
                 elif node.op == '*':
@@ -230,7 +250,8 @@ class NodeVisitor(object):
             else:
                 (n1,), (n2,) = left_shape, right_shape
                 if n1 != n2:
-                    print(node.line_no, 'Operands could not be broadcast together with shapes {} {}'.format(left_shape, right_shape), file=stderr)
+                    print(node.line_no, 'Operands could not be broadcast together with shapes {} {}'
+                          .format(left_shape, right_shape), file=stderr)
                 elif node.op == '/':
                     print(node.line_no, 'Cannot divide by vector', file=stderr)
                 elif node.op == '*':
@@ -254,12 +275,14 @@ class NodeVisitor(object):
             if val_type[0]==array:
                 return val_type
             else:
-                print(node.line_no, 'Type mismatch for operator \': {}'.format(val_type[0]), file=stderr)
+                print(node.line_no, 'Type mismatch for operator \': {}'
+                      .format(type_to_str(val_type[0])), file=stderr)
         elif node.op == '-':
             if val_type[0] != str:
                 return val_type
             else:
-                print(node.line_no, 'Type mismatch for operator - (unary): {}'.format(val_type[0]), file=stderr)
+                print(node.line_no, 'Type mismatch for operator - (unary): {}'
+                      .format(type_to_str(val_type[0])), file=stderr)
         return (None,)
 
     def visit_Assignment(self, node: AST.Assignment):
@@ -269,6 +292,8 @@ class NodeVisitor(object):
             if node.left.obj in layer:
                 old_one = layer[node.left.obj]
                 layer[node.left.obj] = ref_info
+        self.namespace[-1][node.left.obj] = ref_info
+        return ref_info
             
             
     def visit_IfElse(self, node: AST.IfElse):

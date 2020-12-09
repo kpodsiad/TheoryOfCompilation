@@ -125,8 +125,8 @@ class Literal(Node):
         super().__init__(line)
         self.context = None
         self.value = value
-        self.type = type(value)
-        if self.type == np.array:
+        self.val_type = type(value)
+        if self.val_type == np.array:
             self.context = (value.dtype, value.shape)
 
     def eval(self):

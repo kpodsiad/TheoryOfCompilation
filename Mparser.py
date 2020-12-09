@@ -186,7 +186,10 @@ def p_value(p):
              | lvalue
              | row
     """
-    p[0] = ast.Literal(p.lexer.lineno, p[1])
+    if type(p[1]) == ast.Lval:
+        p[0] = p[1]
+    else:
+        p[0] = ast.Literal(p.lexer.lineno, p[1])
 
 
 def p_primitive(p):

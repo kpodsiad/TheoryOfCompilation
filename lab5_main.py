@@ -1,11 +1,12 @@
 
 import sys
 import ply.yacc as yacc
-from Mparser import Mparser
+from Mparser import parser
+from scanner import lexer as scanner
 from TreePrinter import TreePrinter
-from TypeChecker import TypeChecker
+from TypeChecker import NodeVisitor
 from Interpreter import Interpreter
-
+from Exceptions import ReturnValueException
 
 if __name__ == '__main__':
 
@@ -16,17 +17,16 @@ if __name__ == '__main__':
         print("Cannot open {0} file".format(filename))
         sys.exit(0)
 
-    Mparser = Mparser()
-    parser = yacc.yacc(module=Mparser)
     text = file.read()
+    ast = parser.parse(text, lexer=scanner)
+    print(ast)
+    visitor = NodeVisitor()
+    visitor.visit(ast)
 
-    ast = parser.parse(text, lexer=Mparser.scanner)
-
-    # Below code shows how to use visitor
-    typeChecker = TypeChecker()   
-    typeChecker.visit(ast)   # or alternatively ast.accept(typeChecker)
-
-    ast.accept(Interpreter())
+    try:
+        ast.accept(Interpreter())
+    except ReturnValueException as e:
+        print(f'Program returned with value {e.value}')
     # in future
     # ast.accept(OptimizationPass1())
     # ast.accept(OptimizationPass2())

@@ -1,5 +1,5 @@
 
-class ReturnValueException(Exception):
+class ReturnValueException(BaseException):
 
     def __init__(self,value):
         self.value = value

@@ -1,36 +1,68 @@
 from abc import ABCMeta
 import numpy as np
 import operator
+from Exceptions import ReturnValueException
+
+
+def multiply(first, second):
+    if type(first) == type(second) == np.ndarray:
+        return first @ second
+    else:
+        return first * second
+
 
 operators = {
     '==': operator.eq, '!=': operator.ne,
     '>': operator.gt, '<': operator.lt,
     '>=': operator.ge, '<=': operator.le,
     '+': operator.add, '-': operator.sub,
-    '.+': operator.add, '.-': operator.sub,
-    '*': operator.mul, '/': operator.truediv,
-    '.*': operator.mul, './': operator.truediv
+    '*': multiply, '/': operator.truediv,
+    # element wise
+    '.+': np.add, '.-': np.subtract,
+    '.*': np.multiply, './': np.divide
 }
+
 unary = {
     '-': operator.neg,
     'TRANSPOSE': np.transpose
 }
 
 
+def zeros(*args):
+    if len(args) == 1:
+        return np.zeros(args*2)
+    else:
+        return np.zeros(args)
+
+
+def ones(*args):
+    if len(args) == 1:
+        return np.ones(args*2)
+    else:
+        return np.ones(args)
+
+
+def return_(value):
+    raise ReturnValueException(value)
+
+
+funcs = {
+    'eye': np.eye,
+    'zeros': zeros,
+    'ones': ones,
+    'print': print,
+    'return': return_,
+}
+
+
 class Node(metaclass=ABCMeta):
     def __init__(self, line, parent=None):
         self.value = None
-        self.public_names = {}
-        self.names = {}
         self.parent = parent if parent is not None else self
         self.line_no = line
         # if self.parent != self:
         #     self.public_names.update(self.parent.public_names)
         #     self.parent.add_child(self)
-
-    '''@abstractmethod
-    def eval(self):
-        self.public_names.update(self.parent.public_names)'''
 
     def attach_parent(self, parent):
         self.parent = parent
@@ -43,17 +75,14 @@ class Node(metaclass=ABCMeta):
     def print_tree(self):
         print(self)
 
+    def accept(self, visitor):
+        visitor.visit(self)
+
 
 class List(Node):
     def __init__(self, line, parent=None):
         super().__init__(line, parent)
         self.children = []
-
-    def eval(self):
-        for child in self.children:
-            child.public_names.update(self.public_names)
-            child.eval()
-            self.public_names.update(child.public_names)
 
     def add_child(self, child):
         self.children.append(child)
@@ -65,9 +94,6 @@ class Lval(Node):
         self.obj = obj
         self.index = index
 
-    def eval(self):
-        raise NotImplementedError('Not ready yet!')
-
 
 class Binop(Node):
     def __init__(self, line, op, left: Node, right: Node):
@@ -78,13 +104,6 @@ class Binop(Node):
         self.right = right
         self.left.attach_parent(self)
         self.right.attach_parent(self)
-
-    def eval(self):
-        self.left.eval()
-        self.right.eval()
-        self.value = self.func(self.left.value, self.right.value)
-        self.public_names = {**self.left.public_names, **self.right.public_names}
-        self.names = {**self.left.names, **self.right.names}
 
 
 class Unop(Node):
@@ -103,10 +122,7 @@ class Assignment(Node):
         if mode == '=':
             self.right = value
         else:
-            self.right = Binop(mode[:-1], var, value)
-
-    def eval(self):
-        raise NotImplementedError('Not ready yet!')
+            self.right = Binop(line, mode[:-1], var, value)
 
 
 class IfElse(Node):
@@ -115,9 +131,6 @@ class IfElse(Node):
         self.condition = cond
         self.if_block = if_block
         self.else_block = else_block
-
-    def eval(self):
-        raise NotImplementedError('Not ready yet!')
 
 
 class Literal(Node):
@@ -132,18 +145,11 @@ class Literal(Node):
             self.context = (value.dtype, value.shape)
 
 
-    def eval(self):
-        raise NotImplementedError('Not ready yet!')
-
-
 class WhileLoop(Node):
     def __init__(self, line, condition, block):
         super().__init__(line)
         self.condition = condition
         self.block = block
-
-    def eval(self):
-        raise NotImplementedError('Not ready yet!')
 
 
 class ForLoop(Node):
@@ -153,9 +159,6 @@ class ForLoop(Node):
         self.range_arg = range_arg
         self.block = block
 
-    def eval(self):
-        raise NotImplementedError('Not ready yet!')
-
 
 class Range(Node):
     def __init__(self, line, start, end):
@@ -163,28 +166,20 @@ class Range(Node):
         self.start = start
         self.end = end
 
-    def eval(self):
-        raise NotImplementedError('Not ready yet!')
-
 
 class Function(Node):
     def __init__(self, line, name=None):
+        """argumenty dodawane w innych punktach parsingu"""
         super().__init__(line)
         self.name = name
         self.args = List(self.line_no)
-
-    def eval(self):
-        raise NotImplementedError('Not ready yet!')
 
 
 class BreakCont(Node):
     def __init__(self, line, is_break):
         super().__init__(line)
         self.is_break = is_break
-        
+
     @property
     def name(self):
         return 'break' if self.is_break else 'continue'
-
-    def eval(self):
-        raise NotImplementedError('Not ready yet!')

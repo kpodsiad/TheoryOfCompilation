@@ -9,9 +9,19 @@ import sys
 sys.setrecursionlimit(10000)
 
 class Interpreter(object):
-    
+
     def __init__(self):
         self.stack = MemoryStack()
+
+    def get_node_value(self, ast_node):
+        ret = ast_node.accept(self)
+        if isinstance(ast_node, AST.Lval):
+            if type(ret) == str:
+                ret = self.stack.get(ret)
+            else:
+                name, index = ret
+                ret = self.stack.get(name)[index]
+        return ret
 
     @on('node')
     def visit(self, node):
@@ -21,7 +31,8 @@ class Interpreter(object):
     def visit(self, node):
         ret = []
         for child in node.children:
-            ret.append(child.accept(self))
+            ret.append(self.get_node_value(child))
+        return ret
 
     @when(AST.Lval)
     def visit(self, node):
@@ -29,30 +40,30 @@ class Interpreter(object):
             return node.obj
         else:
             return node.obj, node.index
-        
+
     @when(AST.Binop)
     def visit(self, node):
-        r1 = node.left.accept(self)
-        r2 = node.right.accept(self)
+        r1 = self.get_node_value(node.left)
+        r2 = self.get_node_value(node.right)
         return node.func(r1, r2)
 
     @when(AST.Unop)
     def visit(self, node):
         r = node.var.accept(self)
         return node.func(r)
-        
+
 
     @when(AST.Assignment)
     def visit(self, node):
         res = node.left.accept(self)
-        value = node.right.accept(self)
+        value = self.get_node_value(node.right)
         if type(res) == str:
             self.stack.set(res, value)
         else:
             name, index = res
             var = self.stack.get(name)
             var[index] = value
-        
+
     @when(AST.IfElse)
     def visit(self, node):
         decision = node.condition.accept(self)
@@ -64,18 +75,18 @@ class Interpreter(object):
             r = node.else_block.accept(self)
         self.stack.pop()
         return r
-    
+
     @when(AST.Literal)
     def visit(self, node):
         return node.value
-    
+
     @when(AST.WhileLoop)
     def visit(self, node):
         r = None
         self.stack.push(Memory(f'frame{len(self.stack.frames)}_while'))
-        while bool(node.cond.accept(self)):
+        while bool(node.condition.accept(self)):
             try:
-                r = node.body.accept(self)
+                r = node.block.accept(self)
             except BreakException:
                 break
             except ContinueException:
@@ -99,18 +110,20 @@ class Interpreter(object):
                 continue
         self.stack.pop()
 
-    
+
     @when(AST.Range)
     def visit(self, node):
-        return range(node.start.accept(self), node.end.accept(self)+1)
+        start = self.get_node_value(node.start)
+        end = self.get_node_value(node.end)
+        return range(start, end+1)
 
-    
+
     @when(AST.Function)
     def visit(self, node):
         args = node.args.accept(self)
         return AST.funcs[node.name](*args)
 
-    
+
     @when(AST.BreakCont)
     def visit(self, node):
         if node.is_break:

@@ -76,7 +76,7 @@ class Node(metaclass=ABCMeta):
         print(self)
 
     def accept(self, visitor):
-        visitor.visit(self)
+        return visitor.visit(self)
 
 
 class List(Node):

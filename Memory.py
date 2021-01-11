@@ -32,7 +32,7 @@ class MemoryStack:
     def set(self, name, value): # sets variable <name> to value <value>. If variable <name> doesn't exist insert to current stack
         for frame in self.frames[::-1]:
             if frame.has_key(name):
-                return frame.set(name, value)
+                return frame.put(name, value)
         self.insert(name, value)
 
     def push(self, memory): # pushes memory <memory> onto the stack

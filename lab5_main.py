@@ -1,4 +1,3 @@
-
 import sys
 import ply.yacc as yacc
 from Mparser import parser
@@ -31,4 +30,3 @@ if __name__ == '__main__':
     # ast.accept(OptimizationPass1())
     # ast.accept(OptimizationPass2())
     # ast.accept(CodeGenerator())
-    

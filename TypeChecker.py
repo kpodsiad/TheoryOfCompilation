@@ -129,6 +129,7 @@ class NodeVisitor(object):
     def __init__(self):
         self.namespace = [{}] # rekordy nazwa: (typ, [dtype, wymiar jeśli macierz lub lista])
         self.nested_loops = 0
+        self.error = False
 
     def visit(self, node):
         if node is None:
@@ -163,12 +164,15 @@ class NodeVisitor(object):
                 ref_info = layer[node.obj]
                 if node.index is not None and ref_info[0] != ndarray:
                     print(node.line_no, 'Cannot subscript a scalar', file=stderr)
+                    self.error = True
                 elif node.index is not None:
                     if len(node.index) > len(ref_info[2]):
                         print(node.line_no, 'Double-subscript on array', file=stderr)
+                        self.error = True
                     elif (node.index[0] >= ref_info[2][0]
                           or (len(node.index) == 2 and node.index[1] >= ref_info[2][1])):
                         print(node.line_no, 'Index out of range', file=stderr)
+                        self.error = True
                     elif len(node.index) == 1 and len(ref_info[2]) == 2:
                         return ref_info[0], ref_info[1], ref_info[2][:2]
                     else:
@@ -176,6 +180,7 @@ class NodeVisitor(object):
                 else:
                     return ref_info
         print(node.line_no, f'Reference error: {node.obj}', file=stderr)
+        self.error = True
         return (None,)
     
     
@@ -195,6 +200,7 @@ class NodeVisitor(object):
         except KeyError:
             print(node.line_no, 'Cannot apply binary operation: incompatible operands types: {} and {}'
                   .format(type_to_str(left_type[0]), type_to_str(right_type[0])), file=stderr)
+            self.error = True
         
         # [matrix,vector] x [matrix,vector]
         if left_type[0] == right_type[0] == ndarray: 
@@ -203,6 +209,7 @@ class NodeVisitor(object):
             except KeyError:
                 print(node.line_no, 'Unsupported element types for operator {}: {} and {}'
                       .format(node.op, type_to_str(dtype_to_type(left_type[1])), type_to_str(dtype_to_type(right_type[1]))))
+                self.error = True
             left_shape, right_shape = left_type[2], right_type[2]
             # matrix-matrix
             if len(left_shape) == len(right_shape) == 2: 
@@ -210,11 +217,14 @@ class NodeVisitor(object):
                 if n1 != n2 and node.op == '*':
                     print(node.line_no, 'Operands could not be broadcast together with shapes {} {}'
                           .format(left_shape, right_shape), file=stderr)
+                    self.error = True
                 elif left_shape != right_shape:
                     print(node.line_no, 'Operands could not be broadcast together with shapes {} {}'
                           .format(left_shape, right_shape), file=stderr)
+                    self.error = True
                 elif node.op == '/':
                     print(node.line_no, 'Cannot divide by matrix', file=stderr)
+                    self.error = True
                 elif node.op == '*':
                     ret_context.append((m, k))
                 else:
@@ -225,11 +235,14 @@ class NodeVisitor(object):
                 if n1 != n2 and node.op == '*':
                     print(node.line_no, 'Operands could not be broadcast together with shapes {} {}'
                           .format(left_shape, right_shape), file=stderr)
+                    self.error = True
                 elif (1,)+left_shape != right_shape:
                     print(node.line_no, 'Operands could not be broadcast together with shapes {} {}'
                           .format(left_shape, right_shape), file=stderr)
+                    self.error = True
                 elif node.op == '/':
                     print(node.line_no, 'Cannot divide by matrix', file=stderr)
+                    self.error = True
                 elif node.op == '*':
                     ret_context.append((1, k))
                 else:
@@ -240,8 +253,10 @@ class NodeVisitor(object):
                 if n1 != 1 and node.op == '*':
                     print(node.line_no, 'Operands could not be broadcast together with shapes {} {}'
                           .format(left_shape, right_shape), file=stderr)
+                    self.error = True
                 elif node.op == '/':
                     print(node.line_no, 'Cannot divide by vector', file=stderr)
+                    self.error = True
                 elif node.op == '*':
                     ret_context.append((m, n2))
                 else:
@@ -252,8 +267,10 @@ class NodeVisitor(object):
                 if n1 != n2:
                     print(node.line_no, 'Operands could not be broadcast together with shapes {} {}'
                           .format(left_shape, right_shape), file=stderr)
+                    self.error = True
                 elif node.op == '/':
                     print(node.line_no, 'Cannot divide by vector', file=stderr)
+                    self.error = True
                 elif node.op == '*':
                     ret_context.append((1,1))
                 else:
@@ -262,10 +279,12 @@ class NodeVisitor(object):
         elif left_type[0] in {int, float} and right_type[0] in {int,float}:  
             if node.op in {'.+', '.-', '.*', './'}:
                 print(node.line_no, 'Cannot apply dot operator to numbers', file=stderr)
+                self.error = True
         # str-str
         elif left_type[0] == right_type[0] == str:
             if node.op != '+':
                 print(node.line_no, 'Cannot apply operator to string. Strings supports concatenation', file=stderr)
+                self.error = True
         
         return (ret_type, *ret_context)
 
@@ -277,12 +296,14 @@ class NodeVisitor(object):
             else:
                 print(node.line_no, 'Type mismatch for operator \': {}'
                       .format(type_to_str(val_type[0])), file=stderr)
+                self.error = True
         elif node.op == '-':
             if val_type[0] != str:
                 return val_type
             else:
                 print(node.line_no, 'Type mismatch for operator - (unary): {}'
                       .format(type_to_str(val_type[0])), file=stderr)
+                self.error = True
         return (None,)
 
     def visit_Assignment(self, node: AST.Assignment):
@@ -321,12 +342,14 @@ class NodeVisitor(object):
         right_type = self.visit(node.end)
         if left_type[0] != int or right_type[0] != int:
             print(node.line_no, 'Range values must be integers', file=stderr)
+            self.error = True
 
     def visit_Function(self, node: AST.Function):
         if node.name and node.name != 'print':
             for arg in node.args.children:
                 if self.visit(arg)[0] != int:
                     print(node.line_no, 'Arguments for {} must be integral'.format(node.name))
+                    self.error = True
             args = tuple(child.value for child in node.args.children)
             if len(args) == 1:
                 return (ndarray, int, args*2)
@@ -338,6 +361,7 @@ class NodeVisitor(object):
     def visit_BreakCont(self, node: AST.BreakCont):
         if self.nested_loops == 0:
             print(node.line_no, 'Dangling {} outside of loop'.format(node.name), file=stderr)
+            self.error = True
 
 
 class TypeChecker(NodeVisitor):

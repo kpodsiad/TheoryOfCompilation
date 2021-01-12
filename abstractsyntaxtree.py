@@ -171,7 +171,7 @@ class Function(Node):
     def __init__(self, line, name=None):
         """argumenty dodawane w innych punktach parsingu"""
         super().__init__(line)
-        self.name = name
+        self.name = name if name is not None else 'return'
         self.args = List(self.line_no)
 
 

@@ -18,10 +18,14 @@ if __name__ == '__main__':
 
     text = file.read()
     ast = parser.parse(text, lexer=scanner)
-    print(ast)
+    if ast is None:
+        print('Syntax error(s) found, aborting', file=sys.stderr)
+        sys.exit(1)
+    # print(ast)
     visitor = NodeVisitor()
     visitor.visit(ast)
-
+    if visitor.error:
+        print('Semantic analyzer found potential errors, attempting to continue anyway', file=sys.stderr)
     try:
         ast.accept(Interpreter())
     except ReturnValueException as e:
